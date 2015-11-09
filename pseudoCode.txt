@@ -1,0 +1,13 @@
+//This file serves as the pseudoCode for the c code named "R1DL.cpp";
+//Created by Xiang Li (xiangli@uga.edu), 2015/11/9;
+
+//from main():
+  get input file name (containing a matrix) from the 1st argument;
+  get the total number of observations of the input matrix (i.e. number of rows) from the 2nd argument, assigned to variable T;
+  get the total number of variables of the input matrix (i.e. number of columns) from the 3rd argument, assigned to variable P;
+  get the output dictionary (containing matrix D) file  name from the 4th argument;
+  get the output loading (containing matrix z) file name from the 5th argument;
+  get the output summary (i.e. log) file name from the 6th argument;
+  get the total number of dictionary atoms (i.e. number of columns in matrix D) from the 7th argument, assigned to variable M;
+  get the percentage of non-zero elements from the 8th argument, then times the total number of variables (P) to get the total number of non-zero elements in matrix z, assigned to variable R;
+	get the epsilon (criteria of convergence), from the 9th argument, assigned to variable epsilon;
