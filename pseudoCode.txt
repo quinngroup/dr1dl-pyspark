@@ -10,4 +10,4 @@
   get the output summary (i.e. log) file name from the 6th argument;
   get the total number of dictionary atoms (i.e. number of columns in matrix D) from the 7th argument, assigned to variable M;
   get the percentage of non-zero elements from the 8th argument, then times the total number of variables (P) to get the total number of non-zero elements in matrix z, assigned to variable R;
-	get the epsilon (criteria of convergence), from the 9th argument, assigned to variable epsilon;
+  get the epsilon (criteria of convergence), from the 9th argument, assigned to variable epsilon;
