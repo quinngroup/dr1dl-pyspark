@@ -1,3 +1,26 @@
+import argparse
+
+if __name__ == "__main__":  # if this script was run through "python code1.py"
+    parser = argparse.ArgumentParser(description = 'PySpark Dictionary Learning',
+        add_help = 'How to use', prog = 'python code1.py <args>')
+
+    # Required parameters.
+    parser.add_argument("-i", "--input", required = True,
+        help = "File name.")
+    parser.add_argument("-l", "--length", type = int, required = True,
+        help = "Length of the samples.")
+
+    # Optional parameters.
+    parser.add_argument("-nz", "--nonzero", type = float, default = 0.7,
+        help = "Percentage of non-zero elements. [DEFAULT: 0.7]")
+
+    # Parses the arguments.
+    args = vars(parser.parse_args())
+
+    # All command line arguments are now available through args dictionary,
+    # accessed in this way:
+    #    args['input'] # the string input path
+    #    args['nonzero'] # the floating-point nonzero elements
 
 flag = True
 while flag: 
