@@ -1,5 +1,5 @@
 //This file serves as the pseudoCode for the c code named "R1DL.cpp";
-//Created by Xiang Li (xiangli@uga.edu), 2015/11/9;
+//Created by Xiang Li (xiangli@uga.edu), 2015/11/9; last update 2015/11/13;
 
 //from main():
   get input file name (containing a matrix) from the 1st argument;
@@ -22,9 +22,9 @@
   for m=0 to M //M number of dicitonary atoms;
     initialize u_old to a random vector with length T, with zero-mean and unit-length;
     while (not reaching max_iteration)
-      v = u_old*S; //notice the order: vector by matrix;
+      v = u_old*S; //notice the order: vector by matrix, calling op_VCTbyMTX();
       idxs_n = indices of the top R number of elements in v; //notice sorting is NOT necessary;
-      u_new = S*(v selected by idxs_n); //only a portion of v will be iterated, notice the order: matrix by vector;
+      u_new = S*(v selected by idxs_n); //only a portion of v will be iterated, notice the order: matrix by vector, calling op_MTXbyVCT();
       normalize u_new to unit-length;
       diff = |u_old-u_new|_2;
       if (diff<epsilon)
@@ -38,3 +38,26 @@
   store D in file_D;
   store z in file_z;
   //All done!
+
+//from op_VCTbyMTX():
+input: mtx_input, vct_input, I (number of rows in vct_input and mtx_input), J (number of columns in mtx_input);
+output: vct_result;
+  for j=0 to J
+    tmp1 = 0;
+    for i=0 to I
+      tmp1 += vct_input[i]*mtx_input[i][j];
+    next i;
+    vct_result[j] = tmp1;
+  next j
+
+//from op_MTXbyVCT():
+input: mtx_input, vct_input, count_row (number of rows in mtx_input), count_col (number of rows in vct_input, number of columns in mtx_input), idxs_col (indices of non-zero elements in vct_input), R (length of idxs_col);
+output: vct_result;
+  for idx_row=0 to count_row
+    tmp1 = 0;
+    for idx_r=0 to R
+      idx_col = idxs_col[idx_r];
+      tmp1 += vct_input[idx_col]*mtx_input[idx_row][idx_col];
+    next idx_r;
+    vct_result[idx_row] = tmp1;
+  next idx_row
