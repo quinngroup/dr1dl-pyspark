@@ -36,7 +36,7 @@ def op_getl2NormMTX(mtx_input, I, J):
 def op_vctCopy2MTX( vct_input, mtx_input, N, idx_copy):
 	
 	for n in range (N):
-		mtx_input[idx_copy][n] = vct_input[n]
+		mtx_input[[idx_copy],[n]] = vct_input[n]
 
 def op_vctCopy2MTX2( vct_input, mtx_input, N, idx_copy, idxs_n, R):
 
