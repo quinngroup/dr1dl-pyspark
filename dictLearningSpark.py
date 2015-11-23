@@ -181,4 +181,4 @@ def main():
 	np.savetxt(file_Z, Z, fmt='%.50lf\t')
 
 if __name__ == "__main__":
-	mainf()
+	main()
