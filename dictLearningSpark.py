@@ -42,7 +42,7 @@ def op_vctCopy2MTX2( vct_input, mtx_input, N, idx_copy, idxs_n, R):
 
 	for r in range (R):
 		n = idxs_n[r]
-		mtx_input[idx_copy][n] = vct_input[n]
+		mtx_input[[idx_copy],[n]] = vct_input[n]
 
 def stat_normalize2l2NormVCT(vct_input, T):
 	double_l2norm = 0
