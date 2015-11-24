@@ -24,7 +24,7 @@ def op_getResidual( S, u, v, I, idxs_n, R):
 	for i in range (I):
 		for idx_r in range(R):
 			j = idxs_n[idx_r]
-			S[[i],[j]] = S[[i],[j]] - u[i]*v[j]
+			S[[i], [j]] = S[[i], [j]] - u[i]*v[j]
 
 def op_getl2NormMTX(mtx_input, I, J):
 	double_result = 0
@@ -33,17 +33,17 @@ def op_getl2NormMTX(mtx_input, I, J):
 			double_result = mtx_input[[i],[j]]*mtx_input[[i],[j]] + double_result 
 	return (double_result)
 
-def op_vctCopy2MTX( vct_input, mtx_input, N, idx_copy):
-	
-	for n in range (N):
-		mtx_input[[idx_copy],[n]] = vct_input[n]
-
-def op_vctCopy2MTX2( vct_input, mtx_input, N, idx_copy, idxs_n, R):
-
-	for r in range (R):
-		n = idxs_n[r]
-		mtx_input[[idx_copy],[n]] = vct_input[n]
-
+#def op_vctCopy2MTX( vct_input, mtx_input, N, idx_copy):
+#	
+#	for n in range (N):
+#		mtx_input[[idx_copy],[n]] = vct_input[n]
+#
+#def op_vctCopy2MTX2( vct_input, mtx_input, N, idx_copy, idxs_n, R):
+#
+#	for r in range (R):
+#		n = idxs_n[r]
+#		mtx_input[[idx_copy],[n]] = vct_input[n]
+#
 def stat_normalize2l2NormVCT(vct_input, T):
 	double_l2norm = 0
 	for t in range(T):
@@ -172,8 +172,10 @@ def main():
 			np.copyto(u_old,u_new,casting='same_kind')
 		op_getResidual( S, u_new, v, T, idxs_n, R )	
 		totoalResidual = op_getl2NormMTX( S, T, P )
-		op_vctCopy2MTX2( v, Z, P, m, idxs_n, R )
-		op_vctCopy2MTX( u_new, D, T, m)
+		mtx_input[idx_copy, :] = vct_input[idxs_n]
+		mtx_input[idx_copy, :] = vct_input
+    		#op_vctCopy2MTX2( v, Z, P, m, idxs_n, R )
+		#op_vctCopy2MTX( u_new, D, T, m)
 
 	print('Training complete!')
 	print('Writing output (D and z) files...\n')
