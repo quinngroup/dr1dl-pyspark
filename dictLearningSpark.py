@@ -33,17 +33,6 @@ def op_getl2NormMTX(mtx_input, I, J):
 			double_result = mtx_input[[i],[j]]*mtx_input[[i],[j]] + double_result 
 	return (double_result)
 
-#def op_vctCopy2MTX( vct_input, mtx_input, N, idx_copy):
-#	
-#	for n in range (N):
-#		mtx_input[[idx_copy],[n]] = vct_input[n]
-#
-#def op_vctCopy2MTX2( vct_input, mtx_input, N, idx_copy, idxs_n, R):
-#
-#	for r in range (R):
-#		n = idxs_n[r]
-#		mtx_input[[idx_copy],[n]] = vct_input[n]
-#
 def stat_normalize2l2NormVCT(vct_input, T):
 	double_l2norm = 0
 	for t in range(T):
@@ -77,12 +66,6 @@ def stat_randVCT(vct_input, count_row ):
 	for idx_row in range (count_row):
 		vct_input[idx_row] = 2*(random.random() / (RAND_MAX + 1.0))-1	
 
-#def op_VCTbyMTX(mtx_input, vct_input, vct_result, I, J):
-#	for j in range(J):
-#		tmp1 = 0
-#		for i in range(I):
-#			tmp1 = vct_input[i]*mtx_input[[i],[j]] + tmp1
-#		vct_result[j] = tmp1
 
 
 def main():
@@ -174,9 +157,7 @@ def main():
 		totoalResidual = op_getl2NormMTX( S, T, P )
 		mtx_input[idx_copy, :] = vct_input[idxs_n]
 		mtx_input[idx_copy, :] = vct_input
-    		#op_vctCopy2MTX2( v, Z, P, m, idxs_n, R )
-		#op_vctCopy2MTX( u_new, D, T, m)
-
+    		
 	print('Training complete!')
 	print('Writing output (D and z) files...\n')
 	np.savetxt(file_D, D, fmt='%.50lf\t')
