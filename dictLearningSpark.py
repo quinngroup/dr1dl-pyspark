@@ -5,6 +5,8 @@ from io import StringIO   # StringIO behaves like a file object
 import math
 import random
 import matplotlib.pyplot as plt
+from numpy import linalg as sla
+
 
 RAND_MAX = 2147483647
 
@@ -25,48 +27,12 @@ def op_getResidual( S, u, v, I, idxs_n, R):
 		for idx_r in range(R):
 			j = idxs_n[idx_r]
 			S[[i], [j]] = S[[i], [j]] - u[i]*v[j]
-
-def op_getl2NormMTX(mtx_input, I, J):
-	double_result = 0
-	for i in range(I):
-		for j in range(J):
-			double_result = mtx_input[[i],[j]]*mtx_input[[i],[j]] + double_result 
-	return (double_result)
-
-def stat_normalize2l2NormVCT(vct_input, T):
-	double_l2norm = 0
-	for t in range(T):
-		double_l2norm = vct_input[t]*vct_input[t] + double_l2norm
-	double_l2norm = np.sqrt(double_l2norm)
-
-	for t in range (T):
-		vct_input[t] = vct_input[t]/double_l2norm
-
-# chek again !
-def stat_normalize2zeroMeanMTX( mtx_input, T, P ):
-	for p in range(P):
-		double_mean = 0
-		for t in range (T):
-			double_mean = mtx_input[[t],[p]] + double_mean
-		double_mean = double_mean/T
-		for t in range (T):
-			mtx_input[[t],[p]] = mtx_input[[t],[p]] - double_mean
-
-def stat_normalize2l2NormMTX( mtx_input, T, P ):
-	for p in range(P):
-		double_l2norm = 0
-		for t in range (T):
-			double_l2norm = (mtx_input[[t],[p]]*mtx_input[[t],[p]]) + double_l2norm
-		double_l2norm = math.sqrt(double_l2norm)
-		for t in range (T):
-			mtx_input[[t],[p]] = mtx_input[[t],[p]]/double_l2norm
-
+	return(S)		
+	
 def stat_randVCT(vct_input, count_row ):
 	myseed = RAND_MAX * random.random()	
 	for idx_row in range (count_row):
 		vct_input[idx_row] = 2*(random.random() / (RAND_MAX + 1.0))-1	
-
-
 
 def main():
 #parser = argparse.ArgumentParser(description='close bug')
@@ -91,13 +57,8 @@ def main():
 	parser.add_argument("-e", "--epsilon", type = float, required = True,
         help = "The value of epsilon.")
 
-
 	args = vars(parser.parse_args())
 
-	#print(args['input'])
-	#print(args['dictionary'])
-	#print(args['output'])
-	#print(args['summary'])
 # Intializing the variables ;
 	P = int(args['pnumber'])
 	T = int(args['length'])
@@ -117,8 +78,10 @@ def main():
     #S = np.genfromtxt(file_s,delimiter='    ') 
     S = np.loadtxt(file_s)
 # Normalizing the Data 
-	stat_normalize2zeroMeanMTX( S, T, P )
-	stat_normalize2l2NormMTX( S, T, P )
+	S = S - S.mean(axis=0)
+#above line is instead of "stat_normalize2zeroMeanMTX( S, T, P )"
+	S = S / sla.norm(S)
+#above line is instead of "stat_normalize2l2NormMTX( S, T, P )"
 	print('Training .... \n')
 # Initializing 4 vectors with zero    
     u_old = np.zeros((1,T), dtype=np.float)
@@ -127,22 +90,25 @@ def main():
     idxs_n = np.zeros((1,R), dtype=np.float)
     print ('Initalization is complete!')
     epsilon = epsilon * epsilon
-
+# main loop
 	for m in range(M):
 		it=0
 		stat_randVCT( u_old, T )
-		stat_normalize2zeroMeanVCT( u_old, T )
-		stat_normalize2l2NormVCT( u_old, T )
+		u_old = u_old - u_old.mean(axis=0)
+		#above instruction is instead of "stat_normalize2zeroMeanVCT( u_old, T )"
+		u_old = u_old / sla.norm(u_old)
+		#above instruction is instead of "stat_normalize2l2NormVCT( u_old, T )"
+
 		print('Analyzing component ',(m+1),'...')
 		
 		while True :
 		
 			# this instruction is equal with : op_VCTbyMTX( S, u_old, v, T, P );
 			v = np.dot(S,u_old)
-			idxs_n= op_selectTopR(vct_input,idxs_n,R)
-			op_selectTopR( v, P, idxs_n, R )
+			idxs_n= op_selectTopR(v,idxs_n,R)
 			u_new = np.dot(S,v)	
-			stat_normalize2l2NormVCT( u_new, T)
+			# the following line is instead of "stat_normalize2l2NormVCT( u_new, T)"
+			u_new = u_new / sla.norm(u_new)
 			diff = op_VCTl2diff( u_old, u_new, T)
 			if ( diff < epsilon ):
 				break
@@ -154,10 +120,13 @@ def main():
 			#u_old[:] = u_new
 			np.copyto(u_old,u_new,casting='same_kind')
 		op_getResidual( S, u_new, v, T, idxs_n, R )	
-		totoalResidual = op_getl2NormMTX( S, T, P )
-		mtx_input[idx_copy, :] = vct_input[idxs_n]
-		mtx_input[idx_copy, :] = vct_input
-    		
+		#totoalResidual = op_getl2NormMTX( S, T, P )
+		totoalResidual = np.sum(S**2)
+		#op_vctCopy2MTX2( v, Z, P, m, idxs_n, R )
+		Z[m, :] = v
+		#op_vctCopy2MTX( u_new, D, T, m)
+		D[m, :] = u[m]
+		
 	print('Training complete!')
 	print('Writing output (D and z) files...\n')
 	np.savetxt(file_D, D, fmt='%.50lf\t')
