@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from numpy import linalg as sla
 
 
-RAND_MAX = 2147483647
+# RAND_MAX = 2147483647
 
 def op_selectTopR( vct_input, idxs_n, R):
 	temp = np.argpartition(-vct_input, R)
@@ -29,11 +29,6 @@ def op_getResidual( S, u, v, I, idxs_n, R):
 			S[[i], [j]] = S[[i], [j]] - u[i]*v[j]
 	return(S)		
 	
-def stat_randVCT(vct_input, count_row ):
-	myseed = RAND_MAX * random.random()	
-	for idx_row in range (count_row):
-		vct_input[idx_row] = 2*(random.random() / (RAND_MAX + 1.0))-1	
-
 def main():
 #parser = argparse.ArgumentParser(description='close bug')
 	parser = argparse.ArgumentParser(description = 'PySpark Dictionary Learning',
@@ -93,7 +88,7 @@ def main():
 # main loop
 	for m in range(M):
 		it=0
-		stat_randVCT( u_old, T )
+		u_old = np.random.random(T)
 		u_old = u_old - u_old.mean(axis=0)
 		#above instruction is instead of "stat_normalize2zeroMeanVCT( u_old, T )"
 		u_old = u_old / sla.norm(u_old)
