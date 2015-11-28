@@ -16,7 +16,7 @@ def op_selectTopR( vct_input, idxs_n, R):
 def op_VCTl2diff( vct_input1, vct_input2, N):
 	tmp_diff = 0
 	for n in range(N):
-		tmp_diff = np.power((vct_input1[n]-vct_input2[n]), 2) + tmp_diff
+		tmp_diff = np.power((vct_input1[n] - vct_input2[n]), 2) + tmp_diff
 	return (tmp_diff)
 
 def op_getResidual( S, u, v, I, idxs_n, R):
@@ -24,7 +24,7 @@ def op_getResidual( S, u, v, I, idxs_n, R):
 	for i in range (I):
 		for idx_r in range(R):
 			j = idxs_n[idx_r]
-			S[[i],[j]] = S[[i],[j]] - u[i]*v[j]
+			S[[i], [j]] = S[[i], [j]] - u[i]*v[j]
 	return (S)
 def main():
 #parser = argparse.ArgumentParser(description='close bug')
@@ -76,13 +76,13 @@ def main():
 # Initializing 4 vectors with zero
 	u_old = np.zeros((1,T), dtype = np.float)
 	u_new = np.zeros((1,T), dtype = np.float)
-	v = np.zeros((1,P), dtype=np.float)
-	idxs_n = np.zeros((1,R), dtype=np.float)
+	v = np.zeros((1,P), dtype = np.float)
+	idxs_n = np.zeros((1,R), dtype = np.float)
 	print('Initalization is complete!')
 	epsilon = epsilon * epsilon
 
 	for m in range(M):
-		it=0
+		it = 0
 		u_old = np.random.random(T)
 		#stat_randVCT( u_old, T )
 		#above instruction is instead of "stat_normalize2zeroMeanVCT( u_old, T )"
@@ -93,9 +93,9 @@ def main():
 		
 		while True :
 			# this instruction is equal with : op_VCTbyMTX( S, u_old, v, T, P );
-			v = np.dot(S,u_old)
-			idxs_n= op_selectTopR(v,idxs_n,R)
-			u_new = np.dot(S,v)	
+			v = np.dot(S, u_old)
+			idxs_n = op_selectTopR(v, idxs_n, R)
+			u_new = np.dot(S, v)	
 			# the following line is instead of "stat_normalize2l2NormVCT( u_new, T)"
 			u_new = u_new / sla.norm(u_new)
 			diff = op_VCTl2diff( u_old, u_new, T)
@@ -107,8 +107,8 @@ def main():
 				break
 			# Copying the new vector on old one
 			#u_old[:] = u_new
-			np.copyto(u_old,u_new,casting='same_kind')
-		op_getResidual( S, u_new, v, T, idxs_n, R )	
+			np.copyto(u_old, u_new, casting='same_kind')
+		op_getResidual( S, u_new, v, T, idxs_n, R)	
 		#totoalResidual = op_getl2NormMTX( S, T, P )
 		totoalResidual = np.sum(S**2)
 		#op_vctCopy2MTX2( v, Z, P, m, idxs_n, R )
