@@ -68,7 +68,7 @@ def main():
 	print('Number of samples is:',P,'\n')
 	print('Number of dictionaries is:',M,'\n')
 	print('R (number of non-zero elements) is ',R,'\n')
-	print('Convergence criteria is: ||u_new-u_old||<',epsilon,'\n')
+	print('Convergence criteria is: ||u_new - u_old||<',epsilon,'\n')
 	print('Number of maximum iteration is: ',max_iteration,'\n')
 
 # Opening the file in Write mode & converting the TXT file to a matrix
