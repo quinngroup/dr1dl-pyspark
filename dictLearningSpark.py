@@ -6,7 +6,6 @@ import math
 import random
 #import matplotlib.pyplot as plt
 from numpy import linalg as sla
-RAND_MAX = 2147483647
 
 def op_selectTopR( vct_input, idxs_n, R):
 	temp = np.argpartition(-vct_input, R)
@@ -22,7 +21,7 @@ def op_VCTl2diff( vct_input1, vct_input2, N):
 def op_getResidual( S, u, v, I, idxs_n, R):
 	
 	for i in range (I):
-		for idx_r in range(R):
+		for idx_r in range(int(R)):
 			j = idxs_n[idx_r]
 			S[[i], [j]] = S[[i], [j]] - u[i]*v[j]
 	return (S)
@@ -96,15 +95,17 @@ def main():
 		#above instruction is instead of "stat_normalize2zeroMeanVCT( u_old, T )"
 		u_old = u_old - u_old.mean(axis=0)
 		#above instruction is instead of "stat_normalize2l2NormVCT( u_old, T )"
-		u_old = u_old / sla.norm(u_old)
 		print('Analyzing component ',(m+1),'...')
+		print('u_old after normalization is :',u_old,'\n')##
 		
 		while True :
-			# this instruction is equal with : op_VCTbyMTX( S, u_old, v, T, P );
-			v = np.dot(S, u_old)
-			idxs_n = op_selectTopR(v, idxs_n, R)
-			u_new = np.dot(S, v)	
-			# the following line is instead of "stat_normalize2l2NormVCT( u_new, T)"
+		# this instruction is equal with : op_VCTbyMTX( S, u_old, v, T, P );
+			v = np.dot(u_old,S)
+			print('v =',v,'\n')##
+			idxs_n = op_selectTopR(v,idxs_n,R)
+			#op_selectTopR( v, P, idxs_n, R )
+			u_new = np.dot(S,v)	
+			#stat_normalize2l2NormVCT( u_new, T)
 			u_new = u_new / sla.norm(u_new)
 			diff = op_VCTl2diff( u_old, u_new, T)
 			if ( diff < epsilon ):
@@ -115,19 +116,23 @@ def main():
 				break
 			# Copying the new vector on old one
 			#u_old[:] = u_new
-			np.copyto(u_old, u_new, casting='same_kind')
-		op_getResidual( S, u_new, v, T, idxs_n, R)	
+			np.copyto(u_old,u_new,casting='same_kind')
+		print('idxs_n =',idxs_n)
+		op_getResidual( S, u_new, v, T, idxs_n, R )	
 		#totoalResidual = op_getl2NormMTX( S, T, P )
 		totoalResidual = np.sum(S**2)
 		#op_vctCopy2MTX2( v, Z, P, m, idxs_n, R )
 		Z[m, :] = v
 		#op_vctCopy2MTX( u_new, D, T, m)
-		D[m, :] = u[m]
-		
+		D[m, :] = u_new[m]
+
+
 	print('Training complete!')
 	print('Writing output (D and z) files...\n')
-	np.savetxt(file_D, D, fmt='%.50lf\t')
-	np.savetxt(file_Z, Z, fmt='%.50lf\t')
+	print('z =',Z,'\n')
+	print('D =',D,'\n')
+	np.savetxt(file_D, D, fmt='%.8lf\t')
+	np.savetxt(file_Z, Z, fmt='%.8lf\t')
 
 if __name__ == "__main__":
 	main()
