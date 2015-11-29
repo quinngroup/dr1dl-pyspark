@@ -63,9 +63,17 @@ def main():
 	file_Z = str(args['output'])
 # setting the max number of iterations
 	max_iteration = P*10
+	
+	print('Length of samples is:',T,'\n')
+	print('Number of samples is:',P,'\n')
+	print('Number of dictionaries is:',M,'\n')
+	print('R (number of non-zero elements) is ',R,'\n')
+	print('Convergence criteria is: ||u_new-u_old||<',epsilon,'\n')
+	print('Number of maximum iteration is: ',max_iteration,'\n')
+
 # Opening the file in Write mode & converting the TXT file to a matrix
 	print("The Input file is loading...")
-    #S = np.genfromtxt(file_s,delimiter='    ') 
+#S = np.genfromtxt(file_s,delimiter='    ') 
 	S = np.loadtxt(file_s)
 # Normalizing the Data 
 	S = S - S.mean(axis=0)
