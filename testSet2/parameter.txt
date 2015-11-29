@@ -1,0 +1,7 @@
+input file: "S.txt"
+T = 100;
+P = 5;
+output file: "D.txt", "z.txt", "su.txt"
+M = 5;
+R = 0.2;
+epsilon = 0.01
