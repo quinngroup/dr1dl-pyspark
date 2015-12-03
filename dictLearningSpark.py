@@ -8,7 +8,7 @@ import random
 from numpy import linalg as sla
 RAND_MAX = 2147483647
 
-def op_selectTopR( vct_input, idxs_n, R):
+def op_selectTopR( vct_input, R):
 	temp = np.argpartition(-vct_input, R)
 	idxs_n = temp[:R]
 	return (idxs_n)
@@ -62,70 +62,48 @@ def main():
 	file_D = str(args['dictionary'])
 	file_summary = str(args['summary'])
 	file_Z = str(args['output'])
-	
-# setting the max number of iterations
 	max_iteration = P*10
-
 	print('Length of samples is:',T,'\n')
 	print('Number of samples is:',P,'\n')
 	print('Number of dictionaries is:',M,'\n')
 	print('R (number of non-zero elements) is ',R,'\n')
 	print('Convergence criteria is: ||u_new-u_old||<',epsilon,'\n')
 	print('Number of maximum iteration is: ',max_iteration,'\n')
-
-# Opening the file in Write mode & converting the TXT file to a matrix
-	print("The Input file is loading...")
-    #S = np.genfromtxt(file_s,delimiter='    ') 
+	print("Loading input file...")
 	S = np.loadtxt(file_s)
-# Normalizing the Data 
 	S = S - S.mean(axis=0)
-#stat_normalize2zeroMeanMTX( S, T, P )
-	S = S / sla.norm(S)
-#stat_normalize2l2NormMTX( S, T, P )
+	S = S / sla.norm(S, axis=0)
 	print('Training .... \n')
-# Initializing 4 vectors with zero
 	u_old = np.zeros((1,T), dtype = np.float)
 	u_new = np.zeros((1,T), dtype = np.float)
 	v = np.zeros((1,P), dtype=np.float)
 	Z = np.zeros((M,P), dtype=np.float)
 	D = np.zeros((M,T), dtype=np.float)
-	idxs_n = np.zeros((1,R), dtype=np.int)
+	idxs_n = np.zeros((1, R), dtype=np.int)
 	print('Initalization is complete!')
 	epsilon = epsilon * epsilon
-
 	for m in range(M):
 		it=0
 		u_old = np.random.random(T)
-		#print(u_old)##
-		#stat_randVCT( u_old, T )
-		#above instruction is instead of "stat_normalize2zeroMeanVCT( u_old, T )"
-		u_old = u_old - u_old.mean(axis=0)
-		#above instruction is instead of "stat_normalize2l2NormVCT( u_old, T )"
-		u_old = u_old / sla.norm(u_old)
+		#u_old = u_old - u_old.mean(axis=0)
+		u_old = u_old / sla.norm(u_old, axis=0)
 		print('Analyzing component ',(m+1),'...')
-		print('u_old after normalization is :',u_old,'\n')##
-		
 		while True :
-		
-			# this instruction is equal with : op_VCTbyMTX( S, u_old, v, T, P );
-			v = np.dot(u_old,S)
-			print('v =',v,'\n')##
-			idxs_n = op_selectTopR(v,idxs_n,R)
-			#op_selectTopR( v, P, idxs_n, R )
-			u_new = np.dot(S,v)	
-			#stat_normalize2l2NormVCT( u_new, T)
-			u_new = u_new / sla.norm(u_new)
+			v = np.dot(u_old, S)
+			idxs_n = op_selectTopR(v, R)
+			u_new = np.dot(S[:, idxs_n], v[idxs_n])	
+			u_new = u_new / sla.norm(u_new, axis=0)
 			diff = op_VCTl2diff( u_old, u_new, T)
 			if ( diff < epsilon ):
+				print('it: ', it);
 				break
 			it=it+1
 			if (it > max_iteration):
 				print('WARNING: MAX ITERATION REACHED! RESULT MAY BE UNSTABLE! \n')
 				break
 			# Copying the new vector on old one
-			#u_old[:] = u_new
-			np.copyto(u_old,u_new,casting='same_kind')
-		print('idxs_n =',idxs_n)
+			np.copyto(u_old, u_new, casting='same_kind')
+		#print('idxs_n =', idxs_n[0])
 		S = op_getResidual( S, u_new, v, T, idxs_n, R )	
 		#totoalResidual = op_getl2NormMTX( S, T, P )
 		totoalResidual = np.sum(S**2)
@@ -136,9 +114,9 @@ def main():
 
 	print('Training complete!')
 	print('Writing output (D and z) files...\n')
-	print('z =',Z,'\n')
-	print('u_new=',u_new)
-	print('D =',D,'\n')
+	print('z =',Z)
+	#print('u_new=',u_new)
+	#print('D =',D,'\n')
 	np.savetxt(file_D, D, fmt='%.5lf\t')
 	np.savetxt(file_Z, Z, fmt='%.5lf\t')
 
