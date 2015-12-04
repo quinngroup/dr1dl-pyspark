@@ -44,6 +44,7 @@ def op_VCTl2diff(vct_input1, vct_input2, N):
     for n in range(N):
         tmp_diff = np.power((vct_input1[n] - vct_input2[n]), 2) + tmp_diff
     return (tmp_diff)
+
 def op_getResidual(S, u, v, I, idxs_n, R):
     for i in range(I):
         for idx_r in range(int(R)):
@@ -60,10 +61,6 @@ def main():
         help="Dictionary File name.(file_D)")
     parser.add_argument("-o", "--output", required=True,
         help="Output File name.(file_Z)")
-    parser.add_argument("-l", "--length", type=int, required=True,
-        help="Length of the samples.")
-    parser.add_argument("-P", "--pnumber", type=int, required=True,
-        help="Number of the samples.")
     parser.add_argument("-n", "--pnonzero", type=float, required=True,
         help="Percentage of Non-zero elements.")
     parser.add_argument("-m", "--mDicatom", type=int, required=True,
@@ -73,16 +70,18 @@ def main():
 
     args = vars(parser.parse_args())
 
-    P = int(args['pnumber'])
-    T = int(args['length'])
     M = int(args['mDicatom'])
     PCT = float(args['pnonzero'])
-    R = float(PCT * P)
     epsilon = float(args['epsilon'])
     file_s = str(args['input'])
     file_D = str(args['dictionary'])
     file_Z = str(args['output'])
+    S = np.loadtxt(file_s)
+    y = np.shape(S)
+    T = y[0]
+    P = y[1]
     max_iteration = P*10
+    R = float(PCT * P)
     print('Length of samples is:', T, '\n')
     print('Number of samples is:', P, '\n')
     print('Number of dictionaries is:', M, '\n')
@@ -90,7 +89,6 @@ def main():
     print('Convergence criteria is: ||u_new - u_old||<', epsilon, '\n')
     print('Number of maximum iteration is: ', max_iteration, '\n')
     print("Loading input file...")
-    S = np.loadtxt(file_s)
     S = S - S.mean(axis=0)
     S = S / sla.norm(S, axis=0)
     print('Training .... \n')
