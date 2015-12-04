@@ -122,7 +122,7 @@ def main():
                 # Copying the new vector on old one
             np.copyto(u_old, u_new, casting='same_kind')
         S = op_getResidual(S, u_new, v, T, idxs_n, R)
-        totoalResidual = np.sum(S**2)
+        totoalResidual = np.sum(S ** 2)
         Z[m, :] = v
         D[m, :] = u_new
 
