@@ -24,30 +24,6 @@ def op_selectTopR(vct_input, R):
     idxs_n = temp[:R]
     return idxs_n
 
-def op_VCTl2diff(vct_input1, vct_input2, N):
-    """
-    Returns the sum(u_new - u_old)^2
-
-    parameters
-    ----------
-    vct_input1 : array, shape (T)
-        indicating u_new vector
-    vct_input2 : array, shape (T)
-        indicating u_old vector
-    N : integer
-        indicating length of input
-
-    Returns
-    -------
-    tmp_diff : float
-        which is a number indicating
-        sum(u_new - u_old)^2
-    """
-    tmp_diff = 0
-    for n in range(N):
-        tmp_diff = np.power((vct_input1[n] - vct_input2[n]), 2) + tmp_diff
-    return tmp_diff
-
 def op_getResidual(S, u, v, I, idxs_n, R):
     """
     Returns the new S matrix by calculating :
@@ -111,7 +87,6 @@ def main():
     print('Length of samples is:', T, '\n')
     print('Number of samples is:', P, '\n')
     print('Number of dictionaries is:', M, '\n')
-    print('R (number of non-zero elements) is ', R, '\n')
     print('Convergence criteria is: ||u_new - u_old||<', epsilon, '\n')
     print('Number of maximum iteration is: ', max_iteration, '\n')
     print("Loading input file...")
@@ -136,7 +111,7 @@ def main():
             idxs_n = op_selectTopR(v, R)
             u_new = np.dot(S[:, idxs_n], v[idxs_n])
             u_new = u_new / sla.norm(u_new, axis=0)
-            diff = op_VCTl2diff(u_old, u_new, T)
+            diff = sla.norm(u_old - u_new)
             if (diff < epsilon):
                 print('it: ', it)
                 break
