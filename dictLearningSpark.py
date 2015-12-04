@@ -3,6 +3,21 @@ import numpy as np
 import numpy.linalg as sla
 
 def op_selectTopR(vct_input, R):
+    """
+    Returns the Rth greatest elements indices 
+    in vct_input.
+    parameters
+    ----------
+    vct_input : vector 
+        indicating input vector
+    R : integer 
+        indicates Rth greatest elemnts
+    Returns
+    ----------
+    idxs_n : vector
+        which is a vector indicating Rth 
+        greatest elements indices
+    """
     temp = np.argpartition(-vct_input, R)
     idxs_n = temp[:R]
     return (idxs_n)
