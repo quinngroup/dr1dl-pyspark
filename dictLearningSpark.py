@@ -6,21 +6,23 @@ def op_selectTopR(vct_input, R):
     """
     Returns the Rth greatest elements indices
     in vct_input.
+
     parameters
     ----------
-    vct_input : vector
+    vct_input : array, shape (T)
         indicating input vector
     R : integer
         indicates Rth greatest elemnts
+
     Returns
-    ----------
-    idxs_n : vector
+    -------
+    idxs_n : array, shape (R)
         which is a vector indicating Rth
         greatest elements indices
     """
     temp = np.argpartition(-vct_input, R)
     idxs_n = temp[:R]
-    return (idxs_n)
+    return idxs_n
 
 def op_VCTl2diff(vct_input1, vct_input2, N):
     """
@@ -28,14 +30,15 @@ def op_VCTl2diff(vct_input1, vct_input2, N):
 
     parameters
     ----------
-    vct_input1 : vector
+    vct_input1 : array, shape (T)
         indicating u_new vector
-    vct_input2 : vector
+    vct_input2 : array, shape (T)
         indicating u_old vector
     N : integer
         indicating length of input
+
     Returns
-    ----------
+    -------
     tmp_diff : float
         which is a number indicating
         sum(u_new - u_old)^2
@@ -43,29 +46,52 @@ def op_VCTl2diff(vct_input1, vct_input2, N):
     tmp_diff = 0
     for n in range(N):
         tmp_diff = np.power((vct_input1[n] - vct_input2[n]), 2) + tmp_diff
-    return (tmp_diff)
+    return tmp_diff
 
 def op_getResidual(S, u, v, I, idxs_n, R):
+    """
+    Returns the new S matrix by calculating :
+        S =( S - uv )
+
+    parameters
+    ----------
+    u : array, shape (T)
+        indicating 'u_new' vector
+    v : array, shape (P)
+        indicating 'v' vector
+    I : integer
+        indicating number of nonzero items
+    idxs_n : array, shape (R)
+        which is a vector indicating Rth
+        greatest elements indices
+    R : integer
+        indicates Rth greatest elemnts
+
+    Returns
+    -------
+    S : array, shape (T, P)
+        new S matrix based on above mentioned equation
+    """
     for i in range(I):
         for idx_r in range(int(R)):
             j = idxs_n[idx_r]
-            S[[i], [j]] = S[[i], [j]] - (u[i] * v[j])
-    return (S)
+            S[i, j] = S[i, j] - (u[i] * v[j])
+    return S
 
-def main():
-    parser = argparse.ArgumentParser(description='PySpark Dictionary Learning',
-        add_help='How to use', prog='python DictionaryLearning_spark <args>')
-    parser.add_argument("-i", "--input", required=True,
+def main():	
+    parser = argparse.ArgumentParser(description = 'PySpark Dictionary Learning',
+        add_help = 'How to use', prog = 'python DictionaryLearning_spark <args>')
+    parser.add_argument("-i", "--input", required = True,
         help="Input File name.(file_s)")
-    parser.add_argument("-d", "--dictionary", required=True,
+    parser.add_argument("-d", "--dictionary", required = True,
         help="Dictionary File name.(file_D)")
-    parser.add_argument("-o", "--output", required=True,
+    parser.add_argument("-o", "--output", required = True,
         help="Output File name.(file_Z)")
-    parser.add_argument("-n", "--pnonzero", type=float, required=True,
+    parser.add_argument("-n", "--pnonzero", type = float, required = True,
         help="Percentage of Non-zero elements.")
-    parser.add_argument("-m", "--mDicatom", type=int, required=True,
+    parser.add_argument("-m", "--mDicatom", type = int, required = True,
         help="Number of the dictionary atoms.")
-    parser.add_argument("-e", "--epsilon", type=float, required=True,
+    parser.add_argument("-e", "--epsilon", type = float, required = True,
         help="The value of epsilon.")
 
     args = vars(parser.parse_args())
