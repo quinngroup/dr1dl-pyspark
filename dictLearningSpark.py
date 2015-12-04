@@ -4,18 +4,18 @@ import numpy.linalg as sla
 
 def op_selectTopR(vct_input, R):
     """
-    Returns the Rth greatest elements indices 
+    Returns the Rth greatest elements indices
     in vct_input.
     parameters
     ----------
-    vct_input : vector 
+    vct_input : vector
         indicating input vector
-    R : integer 
+    R : integer
         indicates Rth greatest elemnts
     Returns
     ----------
     idxs_n : vector
-        which is a vector indicating Rth 
+        which is a vector indicating Rth
         greatest elements indices
     """
     temp = np.argpartition(-vct_input, R)
@@ -23,11 +23,27 @@ def op_selectTopR(vct_input, R):
     return (idxs_n)
 
 def op_VCTl2diff(vct_input1, vct_input2, N):
+    """
+    Returns the sum(u_new - u_old)^2
+
+    parameters
+    ----------
+    vct_input1 : vector
+        indicating u_new vector
+    vct_input2 : vector
+        indicating u_old vector
+    N : integer
+        indicating length of input
+    Returns
+    ----------
+    tmp_diff : float
+        which is a number indicating
+        sum(u_new - u_old)^2
+    """
     tmp_diff = 0
     for n in range(N):
         tmp_diff = np.power((vct_input1[n] - vct_input2[n]), 2) + tmp_diff
     return (tmp_diff)
-
 def op_getResidual(S, u, v, I, idxs_n, R):
     for i in range(I):
         for idx_r in range(int(R)):
