@@ -54,7 +54,7 @@ def op_getResidual(S, u, v, I, idxs_n, R):
             S[i, j] = S[i, j] - (u[i] * v[j])
     return S
 
-def main():	
+def main():
     parser = argparse.ArgumentParser(description = 'PySpark Dictionary Learning',
         add_help = 'How to use', prog = 'python DictionaryLearning_spark <args>')
     parser.add_argument("-i", "--input", required = True,
@@ -82,7 +82,7 @@ def main():
     y = np.shape(S)
     T = y[0]
     P = y[1]
-    max_iteration = P*10
+    max_iteration = P * 10
     R = float(PCT * P)
     print('Length of samples is:', T, '\n')
     print('Number of samples is:', P, '\n')
