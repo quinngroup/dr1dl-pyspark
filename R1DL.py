@@ -24,33 +24,28 @@ def op_selectTopR(vct_input, R):
     idxs_n = temp[:R]
     return idxs_n
 
-def op_getResidual(S, u, v, I, idxs_n, P, R):
+def op_getResidual(S, u, v, idxs_n):
     """
     Returns the new S matrix by calculating :
         S =( S - uv )
-
     parameters
     ----------
     u : array, shape (T)
         indicating 'u_new' vector
     v : array, shape (P)
         indicating 'v' vector
-    I : integer
-        indicating number of nonzero items
     idxs_n : array, shape (R)
         which is a vector indicating Rth
         greatest elements indices
-    R : integer
-        indicates Rth greatest elemnts
-
+  
     Returns
     -------
     S : array, shape (T, P)
         new S matrix based on above mentioned equation
     """
-    v_sparce = np.zeros((P), dtype = np.float)
-    v_sparce[idxs_n[:R]] = v[idxs_n[:R]]
-    S = S - np.outer(u,v_sparce)  
+    v_sparse = np.zeros(v.shape[0], dtype = np.float)
+    v_sparse[idxs_n] = v[idxs_n]
+    S = S - np.outer(u, v_sparse)
     return S
 
 def main():
@@ -121,7 +116,7 @@ def main():
                 break
                 # Copying the new vector on old one
             np.copyto(u_old, u_new, casting = 'same_kind')
-        S = op_getResidual(S, u_new, v, T, idxs_n, P, R)
+        S = op_getResidual(S, u_new, v, idxs_n)
         totoalResidual = np.sum(S ** 2)
         Z[m, :] = v
         D[m, :] = u_new
