@@ -121,7 +121,7 @@ def main():
                 print('WARNING: MAX ITERATION REACHED! RESULT MAY BE UNSTABLE!\n')
                 break
                 # Copying the new vector on old one
-            np.copyto(u_old, u_new, casting='same_kind')
+            np.copyto(u_old, u_new, casting = 'same_kind')
         S = op_getResidual(S, u_new, v, T, idxs_n, R)
         totoalResidual = np.sum(S ** 2)
         Z[m, :] = v
@@ -131,8 +131,8 @@ def main():
     print('Writing output (D and z) files...\n')
     print('z =', Z)
     print('totoalResidual =', totoalResidual)
-    np.savetxt(file_D, D, fmt='%.5lf\t')
-    np.savetxt(file_Z, Z, fmt='%.5lf\t')
+    np.savetxt(file_D, D, fmt = '%.5lf\t')
+    np.savetxt(file_Z, Z, fmt = '%.5lf\t')
 
 if __name__ == "__main__":
     main()
