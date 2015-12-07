@@ -104,6 +104,7 @@ def main():
     for m in range(M):
         it = 0
         u_old = np.random.random(T)
+        u_old = (u_old - u_old.mean())
         u_old = u_old / sla.norm(u_old, axis = 0)
         print('Analyzing component ', (m + 1), '...')
         while True:
