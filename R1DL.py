@@ -87,12 +87,12 @@ def main():
     S = S - S.mean(axis = 0)
     S = S / sla.norm(S, axis = 0)
     print('Training .... \n')
-    u_old = np.zeros((T), dtype = np.float)
-    u_new = np.zeros((T), dtype = np.float)
-    v = np.zeros((P), dtype = np.float)
+    u_old = np.zeros(T, dtype = np.float)
+    u_new = np.zeros(T, dtype = np.float)
+    v = np.zeros(P, dtype = np.float)
     Z = np.zeros((M, P), dtype = np.float)
     D = np.zeros((M, T), dtype = np.float)
-    idxs_n = np.zeros((R), dtype = np.int)
+    idxs_n = np.zeros(R, dtype = np.int)
     print('Initalization is complete!')
     epsilon = epsilon * epsilon
     for m in range(M):
