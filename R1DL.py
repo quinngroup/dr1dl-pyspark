@@ -5,15 +5,16 @@ import numpy.linalg as sla
 def op_selectTopR(vct_input, R):
     """
     Returns the Rth greatest elements indices
-    in vct_input.
-
+    in input vector and store them in idxs_n.
+    
     parameters
     ----------
     vct_input : array, shape (T)
-        indicating input vector
+        indicating the input vector in which 
+        we aimed to find the R greatest elements
     R : integer
         indicates Rth greatest elemnts
-
+    
     Returns
     -------
     idxs_n : array, shape (R)
@@ -28,23 +29,24 @@ def op_getResidual(S, u, v, idxs_n):
     """
     Returns the new S matrix by calculating :
         S =( S - uv )
-    
+
     parameters
     ----------
     u : array, shape (T)
-        indicating 'u_new' vector
+        indicating 'u_new' vector (new vector
+        of dictionary elements)
     v : array, shape (P)
-        indicating 'v' vector
+        indicating 'v' vector ( which would be
+        finally our output vector)
     idxs_n : array, shape (R)
-        which is a vector indicating Rth
-        greatest elements indices
-    S : array, shape (T, P)
-        current S matrix (input file is mapped in S matrix)
-
+        which is a vector encompassing Rth
+        greatest elements indices.
+  
     Returns
     -------
     S : array, shape (T, P)
         new S matrix based on above mentioned equation
+        (updating S matrix for next iteration)
     """
     v_sparse = np.zeros(v.shape[0], dtype = np.float)
     v_sparse[idxs_n] = v[idxs_n]
