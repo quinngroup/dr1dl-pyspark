@@ -10,7 +10,7 @@ def op_selectTopR(vct_input, R):
     parameters
     ----------
     vct_input : array, shape (T)
-        indicating the input vector in which 
+        indicating the input vector in which
         we aimed to find the R greatest elements
     R : integer
         indicates Rth greatest elemnts
