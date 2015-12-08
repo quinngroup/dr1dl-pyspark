@@ -24,34 +24,28 @@ def op_selectTopR(vct_input, R):
     idxs_n = temp[:R]
     return idxs_n
 
-def op_getResidual(S, u, v, I, idxs_n, R):
+def op_getResidual(S, u, v, idxs_n):
     """
     Returns the new S matrix by calculating :
         S =( S - uv )
-
     parameters
     ----------
     u : array, shape (T)
         indicating 'u_new' vector
     v : array, shape (P)
         indicating 'v' vector
-    I : integer
-        indicating number of nonzero items
     idxs_n : array, shape (R)
         which is a vector indicating Rth
         greatest elements indices
-    R : integer
-        indicates Rth greatest elemnts
-
+  
     Returns
     -------
     S : array, shape (T, P)
         new S matrix based on above mentioned equation
     """
-    for i in range(I):
-        for idx_r in range(int(R)):
-            j = idxs_n[idx_r]
-            S[i, j] = S[i, j] - (u[i] * v[j])
+    v_sparse = np.zeros(v.shape[0], dtype = np.float)
+    v_sparse[idxs_n] = v[idxs_n]
+    S = S - np.outer(u, v_sparse)
     return S
 
 def main():
@@ -93,12 +87,12 @@ def main():
     S = S - S.mean(axis = 0)
     S = S / sla.norm(S, axis = 0)
     print('Training .... \n')
-    u_old = np.zeros((1, T), dtype = np.float)
-    u_new = np.zeros((1, T), dtype = np.float)
-    v = np.zeros((1, P), dtype = np.float)
+    u_old = np.zeros(T, dtype = np.float)
+    u_new = np.zeros(T, dtype = np.float)
+    v = np.zeros(P, dtype = np.float)
     Z = np.zeros((M, P), dtype = np.float)
     D = np.zeros((M, T), dtype = np.float)
-    idxs_n = np.zeros((1, R), dtype = np.int)
+    idxs_n = np.zeros(R, dtype = np.int)
     print('Initalization is complete!')
     epsilon = epsilon * epsilon
     for m in range(M):
@@ -122,7 +116,7 @@ def main():
                 break
                 # Copying the new vector on old one
             np.copyto(u_old, u_new, casting = 'same_kind')
-        S = op_getResidual(S, u_new, v, T, idxs_n, R)
+        S = op_getResidual(S, u_new, v, idxs_n)
         totoalResidual = np.sum(S ** 2)
         Z[m, :] = v
         D[m, :] = u_new
