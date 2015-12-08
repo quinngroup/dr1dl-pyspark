@@ -7,8 +7,8 @@ def op_selectTopR(vct_input, R):
     Returns the Rth greatest elements indices
     in input vector and store them in idxs_n.
     Here, we're using this function instead of
-    a complete sorting, where it's more efficient
-    than complete sorting in real big data application
+    a complete sorting one, where it's more efficient
+    than complete sorting function in real big data application
 
     parameters
     ----------
@@ -37,8 +37,8 @@ def op_getResidual(S, u, v, idxs_n):
     """
     Returns the new S matrix by calculating :
         S =( S - uv )
-    Here the product operation would be an outer
-    product between u and v.
+    Here the product operation between u and v 
+    is an outer product operation.
 
     parameters
     ----------
