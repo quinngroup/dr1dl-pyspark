@@ -115,7 +115,7 @@ def main():
                 print('WARNING: MAX ITERATION REACHED! RESULT MAY BE UNSTABLE!\n')
                 break
                 # Copying the new vector on old one
-            np.copyto(u_old, u_new, casting = 'same_kind')
+            u_old = u_new
         S = op_getResidual(S, u_new, v, idxs_n)
         totoalResidual = np.sum(S ** 2)
         Z[m, :] = v
