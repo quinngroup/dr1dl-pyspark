@@ -28,6 +28,7 @@ def op_getResidual(S, u, v, idxs_n):
     """
     Returns the new S matrix by calculating :
         S =( S - uv )
+    
     parameters
     ----------
     u : array, shape (T)
@@ -37,7 +38,9 @@ def op_getResidual(S, u, v, idxs_n):
     idxs_n : array, shape (R)
         which is a vector indicating Rth
         greatest elements indices
-  
+    S : array, shape (T, P)
+        current S matrix (input file is mapped in S matrix)
+
     Returns
     -------
     S : array, shape (T, P)
