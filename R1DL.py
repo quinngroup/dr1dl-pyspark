@@ -6,7 +6,7 @@ def op_selectTopR(vct_input, R):
     """
     Returns the Rth greatest elements indices
     in input vector and store them in idxs_n.
-    
+
     parameters
     ----------
     vct_input : array, shape (T)
@@ -14,7 +14,7 @@ def op_selectTopR(vct_input, R):
         we aimed to find the R greatest elements
     R : integer
         indicates Rth greatest elemnts
-    
+
     Returns
     -------
     idxs_n : array, shape (R)
@@ -41,7 +41,7 @@ def op_getResidual(S, u, v, idxs_n):
     idxs_n : array, shape (R)
         which is a vector encompassing Rth
         greatest elements indices.
-  
+
     Returns
     -------
     S : array, shape (T, P)
@@ -125,7 +125,6 @@ def main():
         totoalResidual = np.sum(S ** 2)
         Z[m, :] = v
         D[m, :] = u_new
-
     print('Training complete!')
     print('Writing output (D and z) files...\n')
     print('z =', Z)
