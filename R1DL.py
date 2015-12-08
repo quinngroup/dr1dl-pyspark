@@ -6,20 +6,28 @@ def op_selectTopR(vct_input, R):
     """
     Returns the Rth greatest elements indices
     in input vector and store them in idxs_n.
+    Here, we're using this function instead of
+    a complete sorting, where it's more efficient
+    than complete sorting in real big data application
 
     parameters
     ----------
     vct_input : array, shape (T)
-        indicating the input vector in which
-        we aimed to find the R greatest elements
+        indicating the input vector which is a
+        vector we aimed to find the Rth greatest
+        elements. After finding those elements we
+        will store the indices of those specific
+        elements in output vector.
     R : integer
-        indicates Rth greatest elemnts
+        indicates Rth greatest elemnts which we
+        are seeking for.
 
     Returns
     -------
     idxs_n : array, shape (R)
-        which is a vector indicating Rth
-        greatest elements indices
+        a vector in which the Rth greatest elements
+        indices will be stored and returned as major
+        output of the function.
     """
     temp = np.argpartition(-vct_input, R)
     idxs_n = temp[:R]
@@ -29,18 +37,28 @@ def op_getResidual(S, u, v, idxs_n):
     """
     Returns the new S matrix by calculating :
         S =( S - uv )
+    Here the product operation would be an outer
+    product between u and v.
 
     parameters
     ----------
     u : array, shape (T)
         indicating 'u_new' vector (new vector
-        of dictionary elements)
+        of dictionary elements which will be used
+        for updating the S matrix)
     v : array, shape (P)
         indicating 'v' vector ( which would be
-        finally our output vector)
+        finally our output vector but here we are using
+        this vector for updating S matrix by applying
+        outer product of specific elements of v
+        and u_new )
     idxs_n : array, shape (R)
         which is a vector encompassing Rth
         greatest elements indices.
+    S : array, shape (T, P)
+        The input matrix ( befor we stored the input
+        file in this matrix at the main module of program)
+        Here, we need to update this matrix for next iteration.
 
     Returns
     -------
