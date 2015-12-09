@@ -37,11 +37,15 @@ def op_getResidual(S, u, v, idxs_n):
     """
     Returns the new S matrix by calculating :
         S =( S - uv )
-    Here the product operation between u and v 
+    Here the product operation between u and v
     is an outer product operation.
 
     parameters
     ----------
+    S : array, shape (T, P)
+        The input matrix ( befor we stored the input
+        file in this matrix at the main module of program)
+        Here, we need to update this matrix for next iteration.
     u : array, shape (T)
         indicating 'u_new' vector (new vector
         of dictionary elements which will be used
@@ -55,10 +59,6 @@ def op_getResidual(S, u, v, idxs_n):
     idxs_n : array, shape (R)
         which is a vector encompassing Rth
         greatest elements indices.
-    S : array, shape (T, P)
-        The input matrix ( befor we stored the input
-        file in this matrix at the main module of program)
-        Here, we need to update this matrix for next iteration.
 
     Returns
     -------
