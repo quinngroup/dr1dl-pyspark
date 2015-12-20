@@ -27,8 +27,8 @@ def input_to_rowmatrix(raw_rdd, nrows, ncols):
     # Now, convert the RDD of (index, ndarray) tuples to a thunder RowMatrix.
     S = RowMatrix(numpy_rdd,
         dtype = np.float,
-        nrows = args['nrows'],
-        ncols = args['ncols'])
+        nrows = nrows,
+        ncols = ncols)
     return S
 
 if __name__ == "__main__":
