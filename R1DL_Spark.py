@@ -62,8 +62,9 @@ if __name__ == "__main__":
 
     # Initialize the SparkContext. This is where you can create RDDs,
     # the Spark abstraction for distributed data sets.
-    tsc = ThunderContext(SparkContext(conf = SparkConf()))
+    sc = SparkContext(conf = SparkConf())
+    tsc = ThunderContext(sc)
 
     # Read the data and convert it into a thunder RowMatrix.
-    raw_rdd = tsc.textFile(args['input'])
+    raw_rdd = sc.textFile(args['input'])
     S = input_to_rowmatrix(raw_rdd, args['nrows'], args['ncols'])
