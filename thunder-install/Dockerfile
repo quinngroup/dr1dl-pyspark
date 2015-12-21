@@ -15,10 +15,11 @@ RUN apt-get install -y wget rsync build-essential openjdk-7-jdk vim git \
 # Download and install Spark. Remember: it has to be built against Hadoop 1.x,
 # NOT Hadoop 2.x. This is the unfortunate reality, though if you want bonus
 # points, see if you can port thunder-python to Hadoop 2.x? :)
-RUN wget http://d3kbcqa49mib13.cloudfront.net/spark-1.5.2-bin-hadoop1.tgz && \
-    tar zxvf spark-1.5.2-bin-hadoop1.tgz && rm spark-1.5.2-bin-hadoop1.tgz
-RUN mkdir /opt/spark && mv spark-1.5.2-bin-hadoop1 /opt/spark/
-ENV SPARK_HOME /opt/spark/spark-1.5.2-bin-hadoop1
+ENV SPARK_VERSION 1.5.1
+RUN wget http://d3kbcqa49mib13.cloudfront.net/spark-$SPARK_VERSION-bin-hadoop1.tgz && \
+    tar zxvf spark-$SPARK_VERSION-bin-hadoop1.tgz && rm spark-$SPARK_VERSION-bin-hadoop1.tgz
+RUN mkdir /opt/spark && mv spark-$SPARK_VERSION-bin-hadoop1 /opt/spark/
+ENV SPARK_HOME /opt/spark/spark-$SPARK_VERSION-bin-hadoop1
 
 # Now, download the Anaconda installer for Python 2.7.
 RUN wget https://3230d63b5fc54e62148e-c95ac804525aac4b6dba79b00b39d1d3.ssl.cf1.rackcdn.com/Anaconda2-2.4.1-Linux-x86_64.sh
