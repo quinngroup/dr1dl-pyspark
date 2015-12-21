@@ -35,7 +35,10 @@ RUN pip install thunder-python
 ENV IPYTHON 1
 
 # All done!
-CMD ["/bin/bash"]
+# Run this container by specifying:
+#    docker run -it <image id>
+# and you will be kicked into an IPython console with thunder running.
+CMD ["thunder"]
 
 # At this point, if you want to download and run the PySpark dictionary learning
 # framework, you'll need to either generate a new SSH key and add it to the 
