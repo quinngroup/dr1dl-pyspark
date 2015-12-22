@@ -39,16 +39,6 @@ def input_to_rowmatrix(raw_rdd, nrows, ncols):
         ncols = ncols)
     return S
 
-def dict_to_array(dmap):
-    """
-    Utility function for converting the dictionary that is the result of the
-    u * S multiplication into a standard numpy / sparse vector.
-    """
-    retval = np.zeros(len(dmap.keys()))
-    for k, v in dmap:
-        retval[k] = v
-    return retval
-
 ###################################
 # Spark helper functions
 ###################################
