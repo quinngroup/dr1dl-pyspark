@@ -93,7 +93,7 @@ def deflate(row):
 
     # Got all that? Good! Explain it to me.
     u, v = _U_.value, _V_.value
-    return [k, u[k] * v]
+    return [k, vector - (u[k] * v)]
 
 if __name__ == "__main__":
     # Set up the arguments here.
