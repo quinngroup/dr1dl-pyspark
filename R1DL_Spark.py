@@ -213,7 +213,7 @@ if __name__ == "__main__":
         # P4: Deflation step. Update the primary data matrix S.
         _U_ = sc.broadcast(u_new)
         _V_ = sc.broadcast(v)
-        S = S.apply(deflate, keepDType = True, keepIndex = True)
+        S = S.apply(deflate, keepDtype = True, keepIndex = True)
         S.cache()
 
     # All done! Write out the matrices as tab-delimited text files, with
