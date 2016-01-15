@@ -23,7 +23,7 @@ def input_to_rowmatrix(raw_rdd, nrows, ncols):
     #  2: Convert each string to a float.
     #  3: Convert each list to a numpy array.
     numpy_rdd = raw_rdd \
-        .map(lambda x: np.array(map(float, x.strip().split("\t")))) \
+        .map(lambda x: np.array(map(float, x.strip().split()))) \
         .zipWithIndex() \
         .map(lambda x: ((x[1],), x[0]))  # Reverse the elements so the index is first.
 
