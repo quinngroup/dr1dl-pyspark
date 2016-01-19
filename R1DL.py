@@ -95,7 +95,7 @@ def r1dl(S, nonzero, atoms, epsilon):
     """
     T, P = S.shape
     max_iteration = P * 10
-    R = float(PCT * P)
+    R = float(nonzero * P)
 
     # Normalize the data.
     S -= S.mean(axis = 0)
@@ -144,7 +144,7 @@ if __name__ == "__main__":
     # Input arguments.
     parser.add_argument("-i", "--input", required = True,
         help = "Input filename containing matrix S.")
-    parser.add_argument("-n", "--pnonzero", type = float, required = True,
+    parser.add_argument("-r", "--pnonzero", type = float, required = True,
         help = "Percentage of non-zero elements.")
     parser.add_argument("-m", "--mDicatom", type = int, required = True,
         help = "Number of the dictionary atoms.")
@@ -161,15 +161,15 @@ if __name__ == "__main__":
 
     # Parse out the command-line arguments.
     M = args['mDicatom']
-    PCT = args['pnonzero']
+    R = args['pnonzero']
     epsilon = args['epsilon']
     file_s = args['input']
     file_D = args['dictionary']
-    file_Z = args['output']
+    file_Z = args['zmatrix']
 
     # Read the inputs and generate variables to pass to R1DL.
     S = np.loadtxt(file_s)
-    D, Z = r1dl(S, PCT, M, epsilon)
+    D, Z = r1dl(S, R, M, epsilon)
 
     # Write the output to files.
     np.savetxt(file_D, D, fmt = '%.5lf\t')
