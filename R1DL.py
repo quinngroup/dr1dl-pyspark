@@ -71,71 +71,61 @@ def op_getResidual(S, u, v, idxs_n):
     S = S - np.outer(u, v_sparse)
     return S
 
-def main():
-    parser = argparse.ArgumentParser(description = 'PySpark Dictionary Learning',
-        add_help = 'How to use', prog = 'python DictionaryLearning_spark <args>')
-    parser.add_argument("-i", "--input", required = True,
-        help="Input File name.(file_s)")
-    parser.add_argument("-d", "--dictionary", required = True,
-        help="Dictionary File name.(file_D)")
-    parser.add_argument("-o", "--output", required = True,
-        help="Output File name.(file_Z)")
-    parser.add_argument("-n", "--pnonzero", type = float, required = True,
-        help="Percentage of Non-zero elements.")
-    parser.add_argument("-m", "--mDicatom", type = int, required = True,
-        help="Number of the dictionary atoms.")
-    parser.add_argument("-e", "--epsilon", type = float, required = True,
-        help="The value of epsilon.")
+def r1dl(S, nonzero, atoms, epsilon):
+    """
+    R1DL dictionary method.
 
-    args = vars(parser.parse_args())
+    Parameters
+    ----------
+    S : array, shape (T, P)
+        Input data: P instances, T features.
+    nonzero : float
+        Sparsity of the resulting dictionary (percentage of nonzero elements).
+    atoms : integer
+        Number of atoms in the resulting dictionary.
+    epsilon : float
+        Convergence epsilon in determining each dictionary atom.
 
-    M = int(args['mDicatom'])
-    PCT = float(args['pnonzero'])
-    epsilon = float(args['epsilon'])
-    file_s = str(args['input'])
-    file_D = str(args['dictionary'])
-    file_Z = str(args['output'])
-    S = np.loadtxt(file_s)
-    y = np.shape(S)
-    T = y[0]
-    P = y[1]
+    Returns
+    -------
+    D : array, shape (M, T)
+        Dictionary atoms.
+    Z : array, shape (M, P)
+        Loading matrix.
+    """
+    T, P = S.shape
     max_iteration = P * 10
     R = float(PCT * P)
-    print('Length of samples is:', T, '\n')
-    print('Number of samples is:', P, '\n')
-    print('Number of dictionaries is:', M, '\n')
-    print('Convergence criteria is: ||u_new - u_old||<', epsilon, '\n')
-    print('Number of maximum iteration is: ', max_iteration, '\n')
-    print("Loading input file...")
-    S = S - S.mean(axis = 0)
-    S = S / sla.norm(S, axis = 0)
-    print('Training .... \n')
+
+    # Normalize the data.
+    S -= S.mean(axis = 0)
+    S /= sla.norm(S, axis = 0)
+
+    # Generate the atom vectors.
     u_old = np.zeros(T, dtype = np.float)
     u_new = np.zeros(T, dtype = np.float)
     v = np.zeros(P, dtype = np.float)
-    Z = np.zeros((M, P), dtype = np.float)
-    D = np.zeros((M, T), dtype = np.float)
-    idxs_n = np.zeros(R, dtype = np.int)
-    print('Initalization is complete!')
-    epsilon = epsilon * epsilon
+    Z = np.zeros((atoms, P), dtype = np.float)
+    D = np.zeros((atoms, T), dtype = np.float)
+    idxs_n = np.zeros(int(R), dtype = np.int)
+
+    epsilon *= epsilon
     for m in range(M):
         it = 0
         u_old = np.random.random(T)
-        u_old = (u_old - u_old.mean())
-        u_old = u_old / sla.norm(u_old, axis = 0)
-        print('Analyzing component ', (m + 1), '...')
+        u_old -= u_old.mean()
+        u_old /= sla.norm(u_old, axis = 0)
         while True:
             v = np.dot(u_old, S)
             idxs_n = op_selectTopR(v, R)
             u_new = np.dot(S[:, idxs_n], v[idxs_n])
-            u_new = u_new / sla.norm(u_new, axis = 0)
+            u_new /= sla.norm(u_new, axis = 0)
             diff = sla.norm(u_old - u_new)
             if (diff < epsilon):
-                print('it: ', it)
                 break
-            it = it + 1
+            it += 1
             if (it > max_iteration):
-                print('WARNING: MAX ITERATION REACHED! RESULT MAY BE UNSTABLE!\n')
+                print('WARNING: Max iteration reached; result may be unstable!\n')
                 break
                 # Copying the new vector on old one
             u_old = u_new
@@ -143,12 +133,44 @@ def main():
         totoalResidual = np.sum(S ** 2)
         Z[m, :] = v
         D[m, :] = u_new
-    print('Training complete!')
-    print('Writing output (D and z) files...\n')
-    print('z =', Z)
-    print('totoalResidual =', totoalResidual)
-    np.savetxt(file_D, D, fmt = '%.5lf\t')
-    np.savetxt(file_Z, Z, fmt = '%.5lf\t')
+
+    # All done!
+    return [D, Z]
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description = 'Python Dictionary Learning',
+        add_help = 'How to use', prog = 'python R1DL.py <args>')
+
+    # Input arguments.
+    parser.add_argument("-i", "--input", required = True,
+        help = "Input filename containing matrix S.")
+    parser.add_argument("-n", "--pnonzero", type = float, required = True,
+        help = "Percentage of non-zero elements.")
+    parser.add_argument("-m", "--mDicatom", type = int, required = True,
+        help = "Number of the dictionary atoms.")
+    parser.add_argument("-e", "--epsilon", type = float, required = True,
+        help = "The value of epsilon.")
+
+    # Output arguments.
+    parser.add_argument("-d", "--dictionary", required = True,
+        help = "Dictionary (D) output file.")
+    parser.add_argument("-z", "--zmatrix", required = True,
+        help = "Loading matrix (Z) output file.")
+
+    args = vars(parser.parse_args())
+
+    # Parse out the command-line arguments.
+    M = args['mDicatom']
+    PCT = args['pnonzero']
+    epsilon = args['epsilon']
+    file_s = args['input']
+    file_D = args['dictionary']
+    file_Z = args['output']
+
+    # Read the inputs and generate variables to pass to R1DL.
+    S = np.loadtxt(file_s)
+    D, Z = r1dl(S, PCT, M, epsilon)
+
+    # Write the output to files.
+    np.savetxt(file_D, D, fmt = '%.5lf\t')
+    np.savetxt(file_Z, Z, fmt = '%.5lf\t')
