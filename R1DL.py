@@ -110,7 +110,7 @@ def r1dl(S, nonzero, atoms, epsilon):
     idxs_n = np.zeros(int(R), dtype = np.int)
 
     epsilon *= epsilon
-    for m in range(M):
+    for m in range(atoms):
         it = 0
         u_old = np.random.random(T)
         u_old -= u_old.mean()
