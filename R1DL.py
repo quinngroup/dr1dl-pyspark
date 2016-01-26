@@ -117,7 +117,14 @@ def r1dl(S, nonzero, atoms, epsilon):
         u_old /= sla.norm(u_old, axis = 0)
         while True:
             v = np.dot(u_old, S)
+
+            # Zero out all elements of v NOT in the top-R. This is how
+            # sparsity in the final results is explicitly enforced.
             idxs_n = op_selectTopR(v, R)
+            temp_v = np.zeros(v.shape)
+            temp_v[idxs_n] = v[idxs_n]
+            v = temp_v
+
             u_new = np.dot(S[:, idxs_n], v[idxs_n])
             u_new /= sla.norm(u_new, axis = 0)
             diff = sla.norm(u_old - u_new)
