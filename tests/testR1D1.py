@@ -23,13 +23,12 @@ class TestR1D1(unittest.TestCase):
         # Run the test.
         D, Z = r1dl(S, R, M, epsilon)
 
-
-        np.savetxt("/Users/squinn/Desktop/Z.txt", Z)
-        np.savetxt("/Users/squinn/Desktop/D.txt", D)
+        # Compute correlations, since the randomization can potentially
+        # (or rather, will likely) permute the rows of D and Z.
 
         # Compare the results.
-        np.testing.assert_array_almost_equal(Z, Ztrue, decimal = sigfigs)
-        np.testing.assert_array_almost_equal(D, Dtrue, decimal = sigfigs)
+        np.testing.assert_allclose(Z, Ztrue, decimal = sigfigs)
+        np.testing.assert_allclose(D, Dtrue, decimal = sigfigs)
 
 
 if __name__ == "__main__":

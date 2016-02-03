@@ -4,15 +4,41 @@ import os.path
 import scipy.linalg as sla
 
 from pyspark import SparkContext, SparkConf
-from thunder import ThunderContext, RowMatrix
-
-from R1DL import op_selectTopR
 
 ###################################
 # Utility functions
 ###################################
 
-def input_to_rowmatrix(raw_rdd, nrows, ncols):
+def op_selectTopR(vct_input, R):
+    """
+    Returns the Rth greatest elements indices
+    in input vector and store them in idxs_n.
+    Here, we're using this function instead of
+    a complete sorting one, where it's more efficient
+    than complete sorting function in real big data application
+    parameters
+    ----------
+    vct_input : array, shape (T)
+        indicating the input vector which is a
+        vector we aimed to find the Rth greatest
+        elements. After finding those elements we
+        will store the indices of those specific
+        elements in output vector.
+    R : integer
+        indicates Rth greatest elemnts which we
+        are seeking for.
+    Returns
+    -------
+    idxs_n : array, shape (R)
+        a vector in which the Rth greatest elements
+        indices will be stored and returned as major
+        output of the function.
+    """
+    temp = np.argpartition(-vct_input, R)
+    idxs_n = temp[:R]
+    return idxs_n
+
+def input_to_rowmatrix(raw_rdd):
     """
     Utility function for reading the matrix data and converting it to a thunder
     RowMatrix.
@@ -23,36 +49,37 @@ def input_to_rowmatrix(raw_rdd, nrows, ncols):
     #  2: Convert each string to a float.
     #  3: Convert each list to a numpy array.
     numpy_rdd = raw_rdd \
-        .map(lambda x: np.array(map(float, x.strip().split()))) \
         .zipWithIndex() \
-        .map(lambda x: ((x[1],), x[0]))  # Reverse the elements so the index is first.
+        .map(lambda x: (x[1], parse_and_normalize(x[0])))
+   return numpy_rdd
+
+###################################
+# Spark helper functions
+###################################
+
+def parse_and_normalize(line):
+    """
+    Utility function. Parses a line of text into a floating point array, then
+    whitens the array.
+    """
+    x = np.array(map(float, line.strip().split()))
 
     # x.strip() -- strips off trailing whitespace from the string
     # .split("\t") -- splits the string into a list of strings, splitting on tabs
     # map(float, list) -- converts each element of the list from strings to floats
     # np.array(list) -- converts the list of floats into a numpy array
 
-    # Now, convert the RDD of (index, ndarray) tuples to a thunder RowMatrix.
-    S = RowMatrix(numpy_rdd,
-        dtype = np.float,
-        nrows = nrows,
-        ncols = ncols)
-    return S
-
-###################################
-# Spark helper functions
-###################################
+    x -= x.mean()  # 0-mean.
+    x /= sla.norm(x)  # Unit norm.
+    return x
 
 def vector_matrix(row):
     """
     Applies u * S by row-wise multiplication, followed by a reduction on
     each column into a single vector.
     """
-    k, vector = row     # Split up the [key, value] pair.
+    row_index, vector = row     # Split up the [key, value] pair.
     u = _U_.value       # Extract the broadcasted vector "v".
-
-    # What row are we currently accessing?
-    row_index = k[0]
 
     # Generate a list of [key, value] output pairs, one for each nonzero
     # element of vector.
@@ -127,15 +154,10 @@ if __name__ == "__main__":
     # Initialize the SparkContext. This is where you can create RDDs,
     # the Spark abstraction for distributed data sets.
     sc = SparkContext(conf = SparkConf())
-    tsc = ThunderContext(sc)
-
+    
     # Read the data and convert it into a thunder RowMatrix.
     raw_rdd = sc.textFile(args['input'])
     S = input_to_rowmatrix(raw_rdd, args['nrows'], args['ncols'])
-
-    # Column-wise whitening of S.
-    S.zscore(axis = 1)
-    S.cache()
 
     ##################################################################
     # Here's where the real fun begins.
@@ -147,10 +169,10 @@ if __name__ == "__main__":
     # Sound like fun?
     ##################################################################
 
-    # Define some variables.
-    T, P = S.nrows, S.ncols
-    # rows and columns (if these are provided as command-line arguments, it
-    # will save computation!)
+    # If the number of rows and columns are provided as command-line arguments,
+    # this will save from having to compute it from the RDD!
+    T = args['ncols'] if args['ncols'] is not None else numpy_rdd.first()[1].shape[0]
+    P = args['nrows'] if args['nrows'] is not None else numpy_rdd.count()
 
     epsilon = args['epsilon']       # convergence stopping criterion
     M = args['mDicatom']            # dimensionality of the learned dictionary
@@ -178,7 +200,7 @@ if __name__ == "__main__":
         while num_iterations < max_iterations and delta > epsilon:
             # P2: Vector-matrix multiplication step. Computes v.
             _U_ = sc.broadcast(u_old)
-            v = S.rdd \
+            v = S \
                 .flatMap(vector_matrix) \
                 .reduceByKey(lambda x, y: x + y) \
                 .collect()
@@ -186,13 +208,16 @@ if __name__ == "__main__":
 
             # Use our previous method to select the top R.
             indices = op_selectTopR(v, R)
+            temp_v = np.zeros(v.shape)
+            temp_v[indices] = v[indices]
+            v = temp_v
 
             # Broadcast the indices and the vector.
             _V_ = sc.broadcast(v[indices])
             _I_ = sc.broadcast(indices)
 
             # P1: Matrix-vector multiplication step. Computes u.
-            u_new = S.rdd \
+            u_new = S \
                 .map(matrix_vector) \
                 .collect()
             u_new = np.take(sorted(u_new), indices = 1, axis = 1)
@@ -213,8 +238,8 @@ if __name__ == "__main__":
         # P4: Deflation step. Update the primary data matrix S.
         _U_ = sc.broadcast(u_new)
         _V_ = sc.broadcast(v)
-        S = S.apply(deflate, keepDtype = True, keepIndex = True)
-        S.cache()
+        print m
+        S = S.map(deflate).reduceByKey(lambda x, y: x + y)
 
     # All done! Write out the matrices as tab-delimited text files, with
     # floating-point values to 6 decimal-point precision.
@@ -222,3 +247,4 @@ if __name__ == "__main__":
         D, fmt = "%.6f", delimiter = "\t")
     np.savetxt(os.path.join(args['output'], "Z.txt"),
         Z, fmt = "%.6f", delimiter = "\t")
+
