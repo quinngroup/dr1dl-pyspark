@@ -157,7 +157,7 @@ if __name__ == "__main__":
     
     # Read the data and convert it into a thunder RowMatrix.
     raw_rdd = sc.textFile(args['input'])
-    S = input_to_rowmatrix(raw_rdd, args['nrows'], args['ncols'])
+    S = input_to_rowmatrix(raw_rdd)
 
     ##################################################################
     # Here's where the real fun begins.
