@@ -171,8 +171,8 @@ if __name__ == "__main__":
 
     # If the number of rows and columns are provided as command-line arguments,
     # this will save from having to compute it from the RDD!
-    T = args['ncols'] if args['ncols'] is not None else numpy_rdd.first()[1].shape[0]
-    P = args['nrows'] if args['nrows'] is not None else numpy_rdd.count()
+    T = args['ncols'] if args['ncols'] is not None else S.first()[1].shape[0]
+    P = args['nrows'] if args['nrows'] is not None else S.count()
 
     epsilon = args['epsilon']       # convergence stopping criterion
     M = args['mDicatom']            # dimensionality of the learned dictionary
