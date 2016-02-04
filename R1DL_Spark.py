@@ -11,7 +11,7 @@ from pyspark import SparkContext, SparkConf
 
 def op_selectTopR(vct_input, R):
     """
-    Returns the Rth greatest elements indices
+    Returns the R-th greatest elements indices
     in input vector and store them in idxs_n.
     Here, we're using this function instead of
     a complete sorting one, where it's more efficient
@@ -40,8 +40,7 @@ def op_selectTopR(vct_input, R):
 
 def input_to_rowmatrix(raw_rdd):
     """
-    Utility function for reading the matrix data and converting it to a thunder
-    RowMatrix.
+    Utility function for reading the matrix data
     """
     # Parse each line of the input into a numpy array of floats. This requires
     # several steps.
@@ -51,7 +50,7 @@ def input_to_rowmatrix(raw_rdd):
     numpy_rdd = raw_rdd \
         .zipWithIndex() \
         .map(lambda x: (x[1], parse_and_normalize(x[0])))
-   return numpy_rdd
+    return numpy_rdd
 
 ###################################
 # Spark helper functions
@@ -69,8 +68,10 @@ def parse_and_normalize(line):
     # map(float, list) -- converts each element of the list from strings to floats
     # np.array(list) -- converts the list of floats into a numpy array
 
-    x -= x.mean()  # 0-mean.
-    x /= sla.norm(x)  # Unit norm.
+    # comment by Xiang: the following normalization commands work for vector u,
+    # but not work here. I have double-checked it with pre-normalized matrix;
+    #x -= x.mean()  # 0-mean.
+    #x /= sla.norm(x)  # Unit norm.
     return x
 
 def vector_matrix(row):
@@ -78,11 +79,19 @@ def vector_matrix(row):
     Applies u * S by row-wise multiplication, followed by a reduction on
     each column into a single vector.
     """
+	# comment by Xiang: in this case there is T*log(T) complexity?
+	# comment by Xiang: Also, whenever a "row_index, vector = row" is called,
+	# there will be a reading on the portion of S on each node, right?
+	
     row_index, vector = row     # Split up the [key, value] pair.
     u = _U_.value       # Extract the broadcasted vector "v".
 
     # Generate a list of [key, value] output pairs, one for each nonzero
     # element of vector.
+	# comment by Xiang: the code below seems calculating all elements for 
+	# vector v, rather than only the nonzero elements;
+	# comment by Xiang: also I'm puzzled why we are using the "append" function,
+	# as the output of this should be of the same size?
     out = []
     for i in range(vector.shape[0]):
         out.append([i, u[row_index] * vector[i]])
@@ -94,14 +103,11 @@ def matrix_vector(row):
     summations are performed within this very function.
     """
     k, vector = row
-
     # Extract the broadcast variables.
     v = _V_.value
     indices = _I_.value
-
     # Perform the multiplication using the specified indices in both arrays.
     innerprod = np.dot(vector[indices], v)
-
     # That's it! Return the [row, inner product] tuple.
     return [k, innerprod]
 
@@ -111,13 +117,11 @@ def deflate(row):
     broadcasted vectors and returning the modified row.
     """
     k, vector = row
-
     # It's important to keep order of operations in mind: we are computing
     # (and subtracting from S) the outer product of u * v. As we are operating
     # on a row-distributed matrix, we therefore will only iterate over the
     # elements of v, and use the single element of u that corresponds to the
     # index of the current row of S.
-
     # Got all that? Good! Explain it to me.
     u, v = _U_.value, _V_.value
     return [k, vector - (u[k] * v)]
@@ -130,24 +134,28 @@ if __name__ == "__main__":
     # Inputs.
     parser.add_argument("-i", "--input", required = True,
         help = "Input file containing the matrix S.")
-    parser.add_argument("-n", "--pnonzero", type = float, required = True,
+    # comment by Xiang: I added the following two input arguments for T and P;
+    parser.add_argument("-T", "--T", type = int, required = True,
+        help = "Number of rows (observations) in the input amtrix S.")
+    parser.add_argument("-P", "--P", type = int, required = True,
+        help = "Number of columns (features) in the input amtrix S.")	
+    parser.add_argument("-r", "--pnonzero", type = float, required = True,
         help = "Percentage of Non-zero elements.")
     parser.add_argument("-m", "--mDicatom", type = int, required = True,
         help = "Number of the dictionary atoms.")
     parser.add_argument("-e", "--epsilon", type = float, required = True,
         help = "The value of epsilon.")
-
-    # Optional arguments.
-    parser.add_argument("--nrows", type = int, default = None,
-        help = "Number of rows of data in S. [DEFAULT: None]")
-    parser.add_argument("--ncols", type = int, default = None,
-        help = "Number of columns of data in S. [DEFAULT: None]")
-
+	
     # Outputs.
     parser.add_argument("-d", "--dictionary", required = True,
         help = "Output path to dictionary file.(file_D)")
     parser.add_argument("-o", "--output", required = True,
-        help = "Output path to Z matrix.(file_Z)")
+        help = "Output path to z matrix.(file_z)")
+	# comment by Xiang: I added the following output arguments, supposedly
+    # the prefix string shall be extracted from the input file name,
+    # but I'm just saving some troubles here;
+    parser.add_argument("-prefix", "--prefix", required = True,
+        help = "Prefix strings to the output files")
 
     args = vars(parser.parse_args())
 
@@ -169,10 +177,8 @@ if __name__ == "__main__":
     # Sound like fun?
     ##################################################################
 
-    # If the number of rows and columns are provided as command-line arguments,
-    # this will save from having to compute it from the RDD!
-    T = args['ncols'] if args['ncols'] is not None else S.first()[1].shape[0]
-    P = args['nrows'] if args['nrows'] is not None else S.count()
+    T = args['T']
+    P = args['P']
 
     epsilon = args['epsilon']       # convergence stopping criterion
     M = args['mDicatom']            # dimensionality of the learned dictionary
@@ -184,10 +190,9 @@ if __name__ == "__main__":
 
     indices = np.zeros(R)           # for top-R sorting
     max_iterations = P * 10
-
+	
     # Start the loop!
     for m in range(M):
-
         # Generate a random vector, subtract off its mean, and normalize it.
         u_old = np.random.random(T)
         u_old -= u_old.mean()
@@ -243,8 +248,7 @@ if __name__ == "__main__":
 
     # All done! Write out the matrices as tab-delimited text files, with
     # floating-point values to 6 decimal-point precision.
-    np.savetxt(os.path.join(args['dictionary'], "D.txt"),
+    np.savetxt(os.path.join(args['dictionary'], args["prefix"]+"_D.txt"),
         D, fmt = "%.6f", delimiter = "\t")
-    np.savetxt(os.path.join(args['output'], "Z.txt"),
+    np.savetxt(os.path.join(args['output'], args["prefix"]+"_z.txt"),
         Z, fmt = "%.6f", delimiter = "\t")
-
