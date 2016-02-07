@@ -2,6 +2,9 @@ import argparse
 import numpy as np
 import os.path
 import scipy.linalg as sla
+import datetime
+import os
+import psutil
 
 from pyspark import SparkContext, SparkConf
 
@@ -127,6 +130,7 @@ def deflate(row):
     return [k, vector - (u[k] * v)]
 
 if __name__ == "__main__":
+    print datetime.datetime.now()
     # Set up the arguments here.
     parser = argparse.ArgumentParser(description = 'PySpark Dictionary Learning',
         add_help = 'How to use', prog = 'python R1DL_Spark.py <args>')
@@ -185,12 +189,13 @@ if __name__ == "__main__":
     R = args['pnonzero'] * P        # enforces sparsity
     u_new = np.zeros(T)             # atom updates at each iteration
     v = np.zeros(P)
-    Z = np.zeros((M, P))            # output variables
-    D = np.zeros((M, T))
-
-    indices = np.zeros(R)           # for top-R sorting
+    
+    indices_V = np.zeros(R)           # for top-R sorting
+    
     max_iterations = P * 10
-	
+    file_D = os.path.join(args['dictionary'], args["prefix"]+"_D.txt")
+    file_z = os.path.join(args['output'], args["prefix"]+"_z.txt")
+    
     # Start the loop!
     for m in range(M):
         # Generate a random vector, subtract off its mean, and normalize it.
@@ -212,14 +217,11 @@ if __name__ == "__main__":
             v = np.take(sorted(v), indices = 1, axis = 1)
 
             # Use our previous method to select the top R.
-            indices = op_selectTopR(v, R)
-            temp_v = np.zeros(v.shape)
-            temp_v[indices] = v[indices]
-            v = temp_v
+            indices_V = op_selectTopR(v, R)
 
-            # Broadcast the indices and the vector.
-            _V_ = sc.broadcast(v[indices])
-            _I_ = sc.broadcast(indices)
+            # Broadcast the indices_V and the vector.
+            _V_ = sc.broadcast(v[indices_V])
+            _I_ = sc.broadcast(indices_V)
 
             # P1: Matrix-vector multiplication step. Computes u.
             u_new = S \
@@ -236,10 +238,17 @@ if __name__ == "__main__":
             u_old = u_new
             num_iterations += 1
 
-        # Add the newly-computed u and v to the output variables.
-        D[m] = u_new
-        Z[m] = v
-
+        # Save the newly-computed u and v to the output files;
+        with open(file_D,"a+") as fD:
+            np.savetxt(fD, u_new, fmt = "%.6f", newline=" ")
+            fD.write("\n")
+        temp_v = np.zeros(v.shape)
+        temp_v[indices_V] = v[indices_V]
+        v = temp_v
+        with open(file_z,"a+") as fz:
+            np.savetxt(fz, v, fmt = "%.6f", newline=" ")
+            fz.write("\n")
+        
         # P4: Deflation step. Update the primary data matrix S.
         _U_ = sc.broadcast(u_new)
         _V_ = sc.broadcast(v)
@@ -248,7 +257,6 @@ if __name__ == "__main__":
 
     # All done! Write out the matrices as tab-delimited text files, with
     # floating-point values to 6 decimal-point precision.
-    np.savetxt(os.path.join(args['dictionary'], args["prefix"]+"_D.txt"),
-        D, fmt = "%.6f", delimiter = "\t")
-    np.savetxt(os.path.join(args['output'], args["prefix"]+"_z.txt"),
-        Z, fmt = "%.6f", delimiter = "\t")
+    print datetime.datetime.now()
+    process = psutil.Process(os.getpid())
+    print process.memory_info().rss
