@@ -82,19 +82,19 @@ def vector_matrix(row):
     Applies u * S by row-wise multiplication, followed by a reduction on
     each column into a single vector.
     """
-	# comment by Xiang: in this case there is T*log(T) complexity?
-	# comment by Xiang: Also, whenever a "row_index, vector = row" is called,
-	# there will be a reading on the portion of S on each node, right?
-	
+    # comment by Xiang: in this case there is T*log(T) complexity?
+    # comment by Xiang: Also, whenever a "row_index, vector = row" is called,
+    # there will be a reading on the portion of S on each node, right?
+
     row_index, vector = row     # Split up the [key, value] pair.
     u = _U_.value       # Extract the broadcasted vector "v".
 
     # Generate a list of [key, value] output pairs, one for each nonzero
     # element of vector.
-	# comment by Xiang: the code below seems calculating all elements for 
-	# vector v, rather than only the nonzero elements;
-	# comment by Xiang: also I'm puzzled why we are using the "append" function,
-	# as the output of this should be of the same size?
+    # comment by Xiang: the code below seems calculating all elements for
+    # vector v, rather than only the nonzero elements;
+    # comment by Xiang: also I'm puzzled why we are using the "append" function,
+    # as the output of this should be of the same size?
     out = []
     for i in range(vector.shape[0]):
         out.append([i, u[row_index] * vector[i]])
@@ -142,20 +142,20 @@ if __name__ == "__main__":
     parser.add_argument("-T", "--T", type = int, required = True,
         help = "Number of rows (observations) in the input amtrix S.")
     parser.add_argument("-P", "--P", type = int, required = True,
-        help = "Number of columns (features) in the input amtrix S.")	
+        help = "Number of columns (features) in the input amtrix S.")
     parser.add_argument("-r", "--pnonzero", type = float, required = True,
         help = "Percentage of Non-zero elements.")
     parser.add_argument("-m", "--mDicatom", type = int, required = True,
         help = "Number of the dictionary atoms.")
     parser.add_argument("-e", "--epsilon", type = float, required = True,
         help = "The value of epsilon.")
-	
+
     # Outputs.
     parser.add_argument("-d", "--dictionary", required = True,
         help = "Output path to dictionary file.(file_D)")
     parser.add_argument("-o", "--output", required = True,
         help = "Output path to z matrix.(file_z)")
-	# comment by Xiang: I added the following output arguments, supposedly
+    # comment by Xiang: I added the following output arguments, supposedly
     # the prefix string shall be extracted from the input file name,
     # but I'm just saving some troubles here;
     parser.add_argument("-prefix", "--prefix", required = True,
@@ -166,7 +166,7 @@ if __name__ == "__main__":
     # Initialize the SparkContext. This is where you can create RDDs,
     # the Spark abstraction for distributed data sets.
     sc = SparkContext(conf = SparkConf())
-    
+
     # Read the data and convert it into a thunder RowMatrix.
     raw_rdd = sc.textFile(args['input'])
     S = input_to_rowmatrix(raw_rdd)
@@ -189,13 +189,13 @@ if __name__ == "__main__":
     R = args['pnonzero'] * P        # enforces sparsity
     u_new = np.zeros(T)             # atom updates at each iteration
     v = np.zeros(P)
-    
+
     indices_V = np.zeros(R)           # for top-R sorting
-    
+
     max_iterations = P * 10
-    file_D = os.path.join(args['dictionary'], args["prefix"]+"_D.txt")
-    file_z = os.path.join(args['output'], args["prefix"]+"_z.txt")
-    
+    file_D = os.path.join(args['dictionary'], "{}_D.txt".format(args["prefix"]))
+    file_z = os.path.join(args['output'], "{}_z.txt".format(args["prefix"]))
+
     # Start the loop!
     for m in range(M):
         # Generate a random vector, subtract off its mean, and normalize it.
@@ -239,16 +239,16 @@ if __name__ == "__main__":
             num_iterations += 1
 
         # Save the newly-computed u and v to the output files;
-        with open(file_D,"a+") as fD:
-            np.savetxt(fD, u_new, fmt = "%.6f", newline=" ")
+        with open(file_D, "a+") as fD:
+            np.savetxt(fD, u_new, fmt = "%.6f", newline = " ")
             fD.write("\n")
         temp_v = np.zeros(v.shape)
         temp_v[indices_V] = v[indices_V]
         v = temp_v
-        with open(file_z,"a+") as fz:
+        with open(file_z, "a+") as fz:
             np.savetxt(fz, v, fmt = "%.6f", newline=" ")
             fz.write("\n")
-        
+
         # P4: Deflation step. Update the primary data matrix S.
         _U_ = sc.broadcast(u_new)
         _V_ = sc.broadcast(v)
