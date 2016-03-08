@@ -8,38 +8,11 @@ import psutil
 
 from pyspark import SparkContext, SparkConf
 
+from functions import select_topr
+
 ###################################
 # Utility functions
 ###################################
-
-def op_selectTopR(vct_input, R):
-    """
-    Returns the R-th greatest elements indices
-    in input vector and store them in idxs_n.
-    Here, we're using this function instead of
-    a complete sorting one, where it's more efficient
-    than complete sorting function in real big data application
-    parameters
-    ----------
-    vct_input : array, shape (T)
-        indicating the input vector which is a
-        vector we aimed to find the Rth greatest
-        elements. After finding those elements we
-        will store the indices of those specific
-        elements in output vector.
-    R : integer
-        indicates Rth greatest elemnts which we
-        are seeking for.
-    Returns
-    -------
-    idxs_n : array, shape (R)
-        a vector in which the Rth greatest elements
-        indices will be stored and returned as major
-        output of the function.
-    """
-    temp = np.argpartition(-vct_input, R)
-    idxs_n = temp[:R]
-    return idxs_n
 
 def input_to_rowmatrix(raw_rdd):
     """
@@ -130,21 +103,21 @@ def deflate(row):
     return [k, vector - (u[k] * v)]
 
 if __name__ == "__main__":
+
     print datetime.datetime.now()
-    # Set up the arguments here.
+
     parser = argparse.ArgumentParser(description = 'PySpark Dictionary Learning',
         add_help = 'How to use', prog = 'python R1DL_Spark.py <args>')
 
     # Inputs.
     parser.add_argument("-i", "--input", required = True,
         help = "Input file containing the matrix S.")
-    # comment by Xiang: I added the following two input arguments for T and P;
-    parser.add_argument("-T", "--T", type = int, required = True,
+    parser.add_argument("-t", "--rows", type = int, required = True,
         help = "Number of rows (observations) in the input amtrix S.")
-    parser.add_argument("-P", "--P", type = int, required = True,
+    parser.add_argument("-p", "--cols", type = int, required = True,
         help = "Number of columns (features) in the input amtrix S.")
     parser.add_argument("-r", "--pnonzero", type = float, required = True,
-        help = "Percentage of Non-zero elements.")
+        help = "Percentage of non-zero elements.")
     parser.add_argument("-m", "--mDicatom", type = int, required = True,
         help = "Number of the dictionary atoms.")
     parser.add_argument("-e", "--epsilon", type = float, required = True,
@@ -155,9 +128,6 @@ if __name__ == "__main__":
         help = "Output path to dictionary file.(file_D)")
     parser.add_argument("-o", "--output", required = True,
         help = "Output path to z matrix.(file_z)")
-    # comment by Xiang: I added the following output arguments, supposedly
-    # the prefix string shall be extracted from the input file name,
-    # but I'm just saving some troubles here;
     parser.add_argument("-prefix", "--prefix", required = True,
         help = "Prefix strings to the output files")
 
@@ -170,6 +140,7 @@ if __name__ == "__main__":
     # Read the data and convert it into a thunder RowMatrix.
     raw_rdd = sc.textFile(args['input'])
     S = input_to_rowmatrix(raw_rdd)
+    S.cache()
 
     ##################################################################
     # Here's where the real fun begins.
@@ -181,8 +152,8 @@ if __name__ == "__main__":
     # Sound like fun?
     ##################################################################
 
-    T = args['T']
-    P = args['P']
+    T = args['rows']
+    P = args['cols']
 
     epsilon = args['epsilon']       # convergence stopping criterion
     M = args['mDicatom']            # dimensionality of the learned dictionary
@@ -217,7 +188,7 @@ if __name__ == "__main__":
             v = np.take(sorted(v), indices = 1, axis = 1)
 
             # Use our previous method to select the top R.
-            indices_V = op_selectTopR(v, R)
+            indices_V = select_topr(v, R)
 
             # Broadcast the indices_V and the vector.
             _V_ = sc.broadcast(v[indices_V])
@@ -254,6 +225,7 @@ if __name__ == "__main__":
         _V_ = sc.broadcast(v)
         print m
         S = S.map(deflate).reduceByKey(lambda x, y: x + y)
+        S.cache()
 
     # All done! Write out the matrices as tab-delimited text files, with
     # floating-point values to 6 decimal-point precision.
