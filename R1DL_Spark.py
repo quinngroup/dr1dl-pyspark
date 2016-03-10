@@ -103,9 +103,6 @@ def deflate(row):
     return [k, vector - (u[k] * v)]
 
 if __name__ == "__main__":
-
-    print datetime.datetime.now()
-
     parser = argparse.ArgumentParser(description = 'PySpark Dictionary Learning',
         add_help = 'How to use', prog = 'python R1DL_Spark.py <args>')
 
@@ -130,8 +127,12 @@ if __name__ == "__main__":
         help = "Output path to z matrix.(file_z)")
     parser.add_argument("-prefix", "--prefix", required = True,
         help = "Prefix strings to the output files")
+    parser.add_argument("--debug", action = "store_true",
+        help = "If set, turns out debug output.")
 
     args = vars(parser.parse_args())
+
+    if args['debug']: print(datetime.datetime.now())
 
     # Initialize the SparkContext. This is where you can create RDDs,
     # the Spark abstraction for distributed data sets.
@@ -223,12 +224,14 @@ if __name__ == "__main__":
         # P4: Deflation step. Update the primary data matrix S.
         _U_ = sc.broadcast(u_new)
         _V_ = sc.broadcast(v)
-        print m
+
+        if args['debug']: print(m)
+
         S = S.map(deflate).reduceByKey(lambda x, y: x + y)
         S.cache()
 
     # All done! Write out the matrices as tab-delimited text files, with
     # floating-point values to 6 decimal-point precision.
-    print datetime.datetime.now()
+    if args['debug']: print(datetime.datetime.now())
     process = psutil.Process(os.getpid())
-    print process.memory_info().rss
+    print(process.memory_info().rss)
