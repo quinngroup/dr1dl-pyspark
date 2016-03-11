@@ -1,4 +1,5 @@
 import argparse
+import functools
 import numpy as np
 import os.path
 import scipy.linalg as sla
@@ -8,13 +9,20 @@ import psutil
 
 from pyspark import SparkContext, SparkConf
 
-from functions import select_topr
-
 ###################################
 # Utility functions
 ###################################
 
-def input_to_rowmatrix(raw_rdd):
+def select_topr(vct_input, r):
+    """
+    Returns the R-th greatest elements indices
+    in input vector and store them in idxs_n.
+    """
+    temp = np.argpartition(-vct_input, r)
+    idxs_n = temp[:r]
+    return idxs_n
+
+def input_to_rowmatrix(raw_rdd, norm):
     """
     Utility function for reading the matrix data
     """
@@ -23,16 +31,17 @@ def input_to_rowmatrix(raw_rdd):
     #  1: Split each string into a list of strings.
     #  2: Convert each string to a float.
     #  3: Convert each list to a numpy array.
+    p_and_n = functools.partial(parse_and_normalize, norm = norm)
     numpy_rdd = raw_rdd \
         .zipWithIndex() \
-        .map(lambda x: (x[1], parse_and_normalize(x[0])))
+        .map(lambda x: (x[1], p_and_n(x[0])))
     return numpy_rdd
 
 ###################################
 # Spark helper functions
 ###################################
 
-def parse_and_normalize(line):
+def parse_and_normalize(norm, line):
     """
     Utility function. Parses a line of text into a floating point array, then
     whitens the array.
@@ -44,10 +53,9 @@ def parse_and_normalize(line):
     # map(float, list) -- converts each element of the list from strings to floats
     # np.array(list) -- converts the list of floats into a numpy array
 
-    # comment by Xiang: the following normalization commands work for vector u,
-    # but not work here. I have double-checked it with pre-normalized matrix;
-    #x -= x.mean()  # 0-mean.
-    #x /= sla.norm(x)  # Unit norm.
+    if norm:
+        x -= x.mean()  # 0-mean.
+        x /= sla.norm(x)  # Unit norm.
     return x
 
 def vector_matrix(row):
@@ -109,26 +117,30 @@ if __name__ == "__main__":
     # Inputs.
     parser.add_argument("-i", "--input", required = True,
         help = "Input file containing the matrix S.")
-    parser.add_argument("-t", "--rows", type = int, required = True,
+    parser.add_argument("-T", "--rows", type = int, required = True,
         help = "Number of rows (observations) in the input amtrix S.")
-    parser.add_argument("-p", "--cols", type = int, required = True,
+    parser.add_argument("-P", "--cols", type = int, required = True,
         help = "Number of columns (features) in the input amtrix S.")
-    parser.add_argument("-r", "--pnonzero", type = float, required = True,
-        help = "Percentage of non-zero elements.")
-    parser.add_argument("-m", "--mDicatom", type = int, required = True,
-        help = "Number of the dictionary atoms.")
-    parser.add_argument("-e", "--epsilon", type = float, required = True,
-        help = "The value of epsilon.")
+
+    # Optional.
+    parser.add_argument("-r", "--pnonzero", type = float, default = 0.07,
+        help = "Percentage of non-zero elements. [DEFAULT: 0.07]")
+    parser.add_argument("-m", "--dictatoms", type = int, default = 5,
+        help = "Number of the dictionary atoms. [DEFAULT: 5]")
+    parser.add_argument("-e", "--epsilon", type = float, default = 0.01,
+        help = "The convergence criteria in the ALS step. [DEFAULT: 0.01]")
+    parser.add_argument("--debug", action = "store_true",
+        help = "If set, turns out debug output.")
+    parser.add_argument("--normalize", action = "store_true",
+        help = "If set, normalizes input data.")
 
     # Outputs.
     parser.add_argument("-d", "--dictionary", required = True,
         help = "Output path to dictionary file.(file_D)")
     parser.add_argument("-o", "--output", required = True,
         help = "Output path to z matrix.(file_z)")
-    parser.add_argument("-prefix", "--prefix", required = True,
+    parser.add_argument("--prefix", required = True,
         help = "Prefix strings to the output files")
-    parser.add_argument("--debug", action = "store_true",
-        help = "If set, turns out debug output.")
 
     args = vars(parser.parse_args())
 
@@ -140,7 +152,7 @@ if __name__ == "__main__":
 
     # Read the data and convert it into a thunder RowMatrix.
     raw_rdd = sc.textFile(args['input'])
-    S = input_to_rowmatrix(raw_rdd)
+    S = input_to_rowmatrix(raw_rdd, args['normalize'])
     S.cache()
 
     ##################################################################
@@ -157,7 +169,7 @@ if __name__ == "__main__":
     P = args['cols']
 
     epsilon = args['epsilon']       # convergence stopping criterion
-    M = args['mDicatom']            # dimensionality of the learned dictionary
+    M = args['dictatoms']            # dimensionality of the learned dictionary
     R = args['pnonzero'] * P        # enforces sparsity
     u_new = np.zeros(T)             # atom updates at each iteration
     v = np.zeros(P)
