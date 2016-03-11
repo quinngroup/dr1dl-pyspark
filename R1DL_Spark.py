@@ -122,6 +122,8 @@ if __name__ == "__main__":
         help = "Number of the dictionary atoms. [DEFAULT: 5]")
     parser.add_argument("-e", "--epsilon", type = float, default = 0.01,
         help = "The convergence criteria in the ALS step. [DEFAULT: 0.01]")
+    parser.add_argument("--partitions", type = int, default = None,
+        help = "Number of RDD partitions to use. [DEFAULT: 4 * CPUs]")
     parser.add_argument("--debug", action = "store_true",
         help = "If set, turns out debug output.")
     parser.add_argument("--normalize", action = "store_true",
@@ -142,9 +144,10 @@ if __name__ == "__main__":
     # Initialize the SparkContext. This is where you can create RDDs,
     # the Spark abstraction for distributed data sets.
     sc = SparkContext(conf = SparkConf())
+    partitions = args['partitions'] if args['partitions'] is not None else (4 * sc.defaultParallelism)
 
     # Read the data and convert it into a thunder RowMatrix.
-    raw_rdd = sc.textFile(args['input'])
+    raw_rdd = sc.textFile(args['input'], minPartitions = partitions)
     S = input_to_rowmatrix(raw_rdd, args['normalize'])
     S.cache()
 
