@@ -3,11 +3,13 @@ import functools
 import numpy as np
 import os.path
 import scipy.linalg as sla
+import sys
 import datetime
 import os
 import psutil
 
 from pyspark import SparkContext, SparkConf
+from pyspark.mllib.linalg import SparseVector
 
 ###################################
 # Utility functions
@@ -64,13 +66,24 @@ def vector_matrix(row):
     each column into a single vector.
     """
     row_index, vector = row     # Split up the [key, value] pair.
-    u = _U_.value       # Extract the broadcasted vector "v".
+    u = _U_.value       # Extract the broadcasted vector "u".
+
+    # This means we're in the first iteration and we just want a random
+    # vector. To ensure all the workers generate the same random vector,
+    # we have to seed the RNG identically.
+    if type(u) == tuple:
+        T, seed = u
+        np.random.seed(seed)
+        u = np.random.random(T)
+        u -= u.mean()
+        u /= sla.norm(u)
+    u = u[row_index]
 
     # Generate a list of [key, value] output pairs, one for each nonzero
     # element of vector.
     out = []
     for i in range(vector.shape[0]):
-        out.append([i, u[row_index] * vector[i]])
+        out.append([i, u * vector[i]])
     return out
 
 def matrix_vector(row):
@@ -78,12 +91,11 @@ def matrix_vector(row):
     Applies S * v by row-wise multiplication. No reduction needed, as all the
     summations are performed within this very function.
     """
-    k, vector = row  # Extract the broadcast variables.
+    k, row = row  # Extract the broadcast variables.
     v = _V_.value
-    indices = _I_.value
 
     # Perform the multiplication using the specified indices in both arrays.
-    innerprod = np.dot(vector[indices], v)
+    innerprod = np.dot(row[v.indices], v.values)
 
     # That's it! Return the [row, inner product] tuple.
     return [k, innerprod]
@@ -101,7 +113,8 @@ def deflate(row):
     # index of the current row of S.
     # Got all that? Good! Explain it to me.
     u, v = _U_.value, _V_.value
-    return [k, vector - (u[k] * v)]
+    vector[v.indices] -= (u[k] * v.values)
+    return [k, vector]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = 'PySpark Dictionary Learning',
@@ -111,9 +124,9 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--input", required = True,
         help = "Input file containing the matrix S.")
     parser.add_argument("-T", "--rows", type = int, required = True,
-        help = "Number of rows (observations) in the input amtrix S.")
+        help = "Number of rows (observations) in the input matrix S.")
     parser.add_argument("-P", "--cols", type = int, required = True,
-        help = "Number of columns (features) in the input amtrix S.")
+        help = "Number of columns (features) in the input matrix S.")
 
     # Optional.
     parser.add_argument("-r", "--pnonzero", type = float, default = 0.07,
@@ -170,26 +183,24 @@ if __name__ == "__main__":
     u_new = np.zeros(T)             # atom updates at each iteration
     v = np.zeros(P)
 
-    indices_V = np.zeros(R)           # for top-R sorting
-
     max_iterations = P * 10
     file_D = os.path.join(args['dictionary'], "{}_D.txt".format(args["prefix"]))
     file_z = os.path.join(args['output'], "{}_z.txt".format(args["prefix"]))
 
     # Start the loop!
     for m in range(M):
-        # Generate a random vector, subtract off its mean, and normalize it.
+        # In lieu of generating a dense random vector and broadcasting it, we
+        # instead compute a random seed. Randomly, of course.
+        seed = np.random.randint(max_iterations + 1, high = sys.maxsize)
+        np.random.seed(seed)
         u_old = np.random.random(T)
-        u_old -= u_old.mean()
-        u_old /= sla.norm(u_old)
-
         num_iterations = 0
         delta = 2 * epsilon
 
         # Start the inner loop: this learns a single atom.
         while num_iterations < max_iterations and delta > epsilon:
             # P2: Vector-matrix multiplication step. Computes v.
-            _U_ = sc.broadcast(u_old)
+            _U_ = sc.broadcast(u_old) if num_iterations > 0 else sc.broadcast((T, seed))
             v = S \
                 .flatMap(vector_matrix) \
                 .reduceByKey(lambda x, y: x + y) \
@@ -197,11 +208,11 @@ if __name__ == "__main__":
             v = np.take(sorted(v), indices = 1, axis = 1)
 
             # Use our previous method to select the top R.
-            indices_V = select_topr(v, R)
+            indices = select_topr(v, R)
+            sv = SparseVector(P, indices, v[indices])
 
-            # Broadcast the indices_V and the vector.
-            _V_ = sc.broadcast(v[indices_V])
-            _I_ = sc.broadcast(indices_V)
+            # Broadcast the sparse vector.
+            _V_ = sc.broadcast(sv)
 
             # P1: Matrix-vector multiplication step. Computes u.
             u_new = S \
@@ -222,16 +233,13 @@ if __name__ == "__main__":
         with open(file_D, "a+") as fD:
             np.savetxt(fD, u_new, fmt = "%.6f", newline = " ")
             fD.write("\n")
-        temp_v = np.zeros(v.shape)
-        temp_v[indices_V] = v[indices_V]
-        v = temp_v
         with open(file_z, "a+") as fz:
-            np.savetxt(fz, v, fmt = "%.6f", newline=" ")
+            np.savetxt(fz, sv.toArray(), fmt = "%.6f", newline = " ")
             fz.write("\n")
 
         # P4: Deflation step. Update the primary data matrix S.
         _U_ = sc.broadcast(u_new)
-        _V_ = sc.broadcast(v)
+        _V_ = sc.broadcast(sv)
 
         if args['debug']: print(m)
 
