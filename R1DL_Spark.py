@@ -63,19 +63,11 @@ def vector_matrix(row):
     Applies u * S by row-wise multiplication, followed by a reduction on
     each column into a single vector.
     """
-    # comment by Xiang: in this case there is T*log(T) complexity?
-    # comment by Xiang: Also, whenever a "row_index, vector = row" is called,
-    # there will be a reading on the portion of S on each node, right?
-
     row_index, vector = row     # Split up the [key, value] pair.
     u = _U_.value       # Extract the broadcasted vector "v".
 
     # Generate a list of [key, value] output pairs, one for each nonzero
     # element of vector.
-    # comment by Xiang: the code below seems calculating all elements for
-    # vector v, rather than only the nonzero elements;
-    # comment by Xiang: also I'm puzzled why we are using the "append" function,
-    # as the output of this should be of the same size?
     out = []
     for i in range(vector.shape[0]):
         out.append([i, u[row_index] * vector[i]])
@@ -86,12 +78,13 @@ def matrix_vector(row):
     Applies S * v by row-wise multiplication. No reduction needed, as all the
     summations are performed within this very function.
     """
-    k, vector = row
-    # Extract the broadcast variables.
+    k, vector = row  # Extract the broadcast variables.
     v = _V_.value
     indices = _I_.value
+
     # Perform the multiplication using the specified indices in both arrays.
     innerprod = np.dot(vector[indices], v)
+
     # That's it! Return the [row, inner product] tuple.
     return [k, innerprod]
 
