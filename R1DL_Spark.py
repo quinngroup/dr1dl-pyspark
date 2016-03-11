@@ -43,18 +43,12 @@ def input_to_rowmatrix(raw_rdd, norm):
 # Spark helper functions
 ###################################
 
-def parse_and_normalize(norm, line):
+def parse_and_normalize(line, norm):
     """
     Utility function. Parses a line of text into a floating point array, then
     whitens the array.
     """
-    x = np.array(map(float, line.strip().split()))
-
-    # x.strip() -- strips off trailing whitespace from the string
-    # .split("\t") -- splits the string into a list of strings, splitting on tabs
-    # map(float, list) -- converts each element of the list from strings to floats
-    # np.array(list) -- converts the list of floats into a numpy array
-
+    x = np.array([float(c) for c in line.strip().split()])
     if norm:
         x -= x.mean()  # 0-mean.
         x /= sla.norm(x)  # Unit norm.
@@ -135,12 +129,16 @@ if __name__ == "__main__":
         help = "Number of the dictionary atoms. [DEFAULT: 5]")
     parser.add_argument("-e", "--epsilon", type = float, default = 0.01,
         help = "The convergence criteria in the ALS step. [DEFAULT: 0.01]")
-    parser.add_argument("--partitions", type = int, default = None,
-        help = "Number of RDD partitions to use. [DEFAULT: 4 * CPUs]")
-    parser.add_argument("--debug", action = "store_true",
-        help = "If set, turns out debug output.")
     parser.add_argument("--normalize", action = "store_true",
         help = "If set, normalizes input data.")
+    parser.add_argument("--debug", action = "store_true",
+        help = "If set, turns out debug output.")
+
+    # Spark options.
+    parser.add_argument("--partitions", type = int, default = None,
+        help = "Number of RDD partitions to use. [DEFAULT: 4 * CPUs]")
+    parser.add_argument("--execmem", default = "8g",
+        help = "Amount of memory for each executor. [DEFAULT: 8g]")
 
     # Outputs.
     parser.add_argument("-d", "--dictionary", required = True,
@@ -156,7 +154,9 @@ if __name__ == "__main__":
 
     # Initialize the SparkContext. This is where you can create RDDs,
     # the Spark abstraction for distributed data sets.
-    sc = SparkContext(conf = SparkConf())
+    conf = SparkConf()
+    conf.set("spark.executor.memory", args['execmem'])
+    sc = SparkContext(conf = conf)
     partitions = args['partitions'] if args['partitions'] is not None else (4 * sc.defaultParallelism)
 
     # Read the data and convert it into a thunder RowMatrix.
@@ -191,7 +191,7 @@ if __name__ == "__main__":
     for m in range(M):
         # In lieu of generating a dense random vector and broadcasting it, we
         # instead compute a random seed. Randomly, of course.
-        seed = np.random.randint(max_iterations + 1, high = sys.maxsize)
+        seed = np.random.randint(max_iterations + 1, high = 4294967295)
         np.random.seed(seed)
         u_old = np.random.random(T)
         num_iterations = 0
@@ -246,8 +246,6 @@ if __name__ == "__main__":
         S = S.map(deflate).reduceByKey(lambda x, y: x + y)
         S.cache()
 
-    # All done! Write out the matrices as tab-delimited text files, with
-    # floating-point values to 6 decimal-point precision.
     if args['debug']: print(datetime.datetime.now())
     process = psutil.Process(os.getpid())
     print(process.memory_info().rss)
