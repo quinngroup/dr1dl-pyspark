@@ -208,7 +208,7 @@ if __name__ == "__main__":
             v = np.take(sorted(v), indices = 1, axis = 1)
 
             # Use our previous method to select the top R.
-            indices = select_topr(v, R)
+            indices = np.sort(select_topr(v, R))
             sv = SparseVector(P, indices, v[indices])
 
             # Broadcast the sparse vector.
