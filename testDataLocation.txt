@@ -1,7 +1,0 @@
-The test data used for input of the dictionary learning could be downloaded at:
-
-http://hafni.cs.uga.edu/test.txt
-
-the transpose of it is at:
-
-http://hafni.cs.uga.edu/test_T.txt
