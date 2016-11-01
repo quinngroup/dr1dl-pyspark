@@ -6,7 +6,7 @@ import scipy.linalg as sla
 import sys
 import datetime
 import os
-import psutil
+#import psutil
 
 from pyspark import SparkContext, SparkConf
 from pyspark.mllib.linalg import SparseVector
@@ -250,8 +250,8 @@ if __name__ == "__main__":
         S.cache()
 
     if args['debug']: print(datetime.datetime.now())
-    process = psutil.Process(os.getpid())
-    print(process.memory_info().rss)
+    #process = psutil.Process(os.getpid())
+    #print(process.memory_info().rss)
 
     endtime = datetime.datetime.now()
     delta = endtime - starttime
