@@ -159,6 +159,9 @@ if __name__ == "__main__":
     sc = SparkContext(conf = conf)
     partitions = args['partitions'] if args['partitions'] is not None else (4 * sc.defaultParallelism)
 
+    import datetime
+    starttime = datetime.datetime.now()
+
     # Read the data and convert it into a thunder RowMatrix.
     raw_rdd = sc.textFile(args['input'], minPartitions = partitions)
     S = input_to_rowmatrix(raw_rdd, args['normalize'])
@@ -249,3 +252,7 @@ if __name__ == "__main__":
     if args['debug']: print(datetime.datetime.now())
     process = psutil.Process(os.getpid())
     print(process.memory_info().rss)
+
+    endtime = datetime.datetime.now()
+    delta = endtime - starttime
+    print('MILLISECONDS ELAPSED: ' + str(int(delta.total_seconds() * 1000)))
