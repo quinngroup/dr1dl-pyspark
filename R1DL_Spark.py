@@ -233,12 +233,12 @@ if __name__ == "__main__":
             num_iterations += 1
 
         # Save the newly-computed u and v to the output files;
-        with open(file_D, "a+") as fD:
+        with open(file_D, "ba+") as fD:
             np.savetxt(fD, u_new, fmt = "%.6f", newline = " ")
-            fD.write("\n")
-        with open(file_z, "a+") as fz:
+            fD.write(b"\n")
+        with open(file_z, "ba+") as fz:
             np.savetxt(fz, sv.toArray(), fmt = "%.6f", newline = " ")
-            fz.write("\n")
+            fz.write(b"\n")
 
         # P4: Deflation step. Update the primary data matrix S.
         _U_ = sc.broadcast(u_new)
