@@ -187,8 +187,8 @@ if __name__ == "__main__":
     v = np.zeros(P)
 
     max_iterations = P * 10
-    file_D = os.path.join(args['dictionary'], "{}_D.txt".format(args["prefix"]))
-    file_z = os.path.join(args['output'], "{}_z.txt".format(args["prefix"]))
+    file_D = os.path.join(args['dictionary'], "{0}_D.txt".format(args["prefix"]))
+    file_z = os.path.join(args['output'], "{0}_z.txt".format(args["prefix"]))
 
     # Start the loop!
     for m in range(M):
