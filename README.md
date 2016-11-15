@@ -7,7 +7,7 @@ This code was used in the publication *[Scalable Fast Rank-1 Dictionary Learning
 If you use this software in a scientific publication, please use the following citation:
 
     @inproceedings{li2016scalable,
-      title={Scalable Fast Rank-1 Dictionary Learning for fMRI Big Data Analysis},
+      title={Scalable Fast Rank-1 Dictionary Learning for f{MRI} Big Data Analysis},
       author={Li, Xiang and Makkie, Milad and Lin, Binbin and Fazli, Mojtaba  Sedigh and Davidson, Ian and Ye, Jieping and Liu, Tianming and Quinn, Shannon},
       booktitle={KDD 2016: Proceeding of the 22nd ACM SIGKDD Conference on Knowledge Discovery and Data Mining},
       year={2016},
