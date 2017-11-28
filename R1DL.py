@@ -1,6 +1,7 @@
 import argparse
 import numpy as np
 import numpy.linalg as sla
+from math import ceil
 
 def op_selectTopR(vct_input, R):
     """
@@ -29,8 +30,8 @@ def op_selectTopR(vct_input, R):
         indices will be stored and returned as major
         output of the function.
     """
-    temp = np.argpartition(-vct_input, R)
-    idxs_n = temp[:R]
+    temp = np.argpartition(-vct_input, ceil(R))
+    idxs_n = temp[:ceil(R)]
     return idxs_n
 
 def op_getResidual(S, u, v, idxs_n):
